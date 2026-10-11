@@ -133,11 +133,11 @@
                 <article>
                     <h2>Offline & browser storage</h2>
                     <p id="offlineStatus" role="status">Checking offline files…</p>
-                    <div class="row"><button id="downloadOffline">Download offline game</button><button id="installApp" class="secondary" hidden>Install app</button><button id="removeOffline" class="secondary">Remove game download</button></div>
-                    <progress id="offlineProgress" hidden max="100" value="0"></progress>
+                    <div class="row"><button id="downloadOffline">Download offline game</button><button id="cancelOffline" class="secondary" hidden>Cancel download</button><button id="installApp" class="secondary" hidden>Install app</button><button id="removeOffline" class="secondary">Remove game download</button></div>
+                    <progress aria-label="Offline game download" id="offlineProgress" hidden max="100" value="0"></progress>
                     <p id="storageInfo" role="status">Checking browser storage…</p>
                     <button id="persistStorage" class="secondary">Request persistent storage</button>
-                    <p>Offline files and character saves are separate. Export backups before clearing browser data. Chromebook sleep may suspend the game.</p>
+                    <p>Game downloads stay in this browser. Export a backup to move your saves to another device. Offline files and character saves are separate. Export backups before clearing browser data. Chromebook sleep may suspend the game.</p>
                 </article>
             </section>
             <footer>Character progression, shared inventories, world variables, and settings persist. NPCs, ground items, and temporary world changes reset between sessions.</footer>

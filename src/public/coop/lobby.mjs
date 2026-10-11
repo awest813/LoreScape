@@ -432,14 +432,19 @@ action('copy', async () => {
 action('export', async () => {
     if (!$('worlds').value) throw new Error('Select a saved world to export');
     downloadBackup(await store.export($('worlds').value));
+    notice('Backup download started. Keep this file somewhere safe.');
 });
 function downloadBackup(text) {
     const url = URL.createObjectURL(new Blob([text], {type: 'application/json'}));
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'lorescape-backup.json';
+    const data = JSON.parse(text);
+    const name = String(data.snapshot?.data?.name || 'world').replace(/[^a-zA-Z0-9_-]+/g, '-').slice(0, 48);
+    link.download = `lorescape-${name}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    document.body.append(link);
     link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 action('sessionExport', async () => {
     const current = session;
@@ -606,7 +611,9 @@ async function storageInfo() {
         : 'Storage estimates are unavailable in this browser.';
     $('persistStorage').disabled = persistent || !navigator.storage?.persist;
 }
+let canCancelOffline = false;
 function offlineStatus(status) {
+    canCancelOffline = status.supportsCancellation === true;
     $('offlineStatus').textContent = status.ready ? `Offline ready · ${(status.bytes / 1048576).toFixed(1)} MiB · solo play works without the server.` : 'Game files are not downloaded yet. Connect once, then download for offline solo play.';
 }
 action('persistStorage', async () => {
@@ -614,21 +621,38 @@ action('persistStorage', async () => {
     await storageInfo();
     notice(granted ? 'Persistent browser storage granted. Keep exported backups too.' : 'The browser did not grant persistence. Saves still work; keep exported backups.');
 });
+let downloadController = null;
+$('cancelOffline').onclick = () => {
+    downloadController?.abort();
+    $('cancelOffline').disabled = true;
+    $('offlineStatus').textContent = 'Cancelling download…';
+};
 action('downloadOffline', async () => {
     if (session || opening) throw new Error('End your session before updating offline files');
+    downloadController = new AbortController();
     $('offlineProgress').hidden = false;
+    $('offlineProgress').value = 0;
+    $('cancelOffline').hidden = !canCancelOffline;
+    $('cancelOffline').disabled = false;
+    $('removeOffline').disabled = true;
+    $('offlineStatus').textContent = 'Preparing offline download…';
     try {
         offlineStatus(
             await offlineAction('offline-prepare', progress => {
                 $('offlineProgress').value = (progress.done / progress.total) * 100;
-                $('offlineStatus').textContent = `Downloading ${progress.done} / ${progress.total} files · ${(progress.bytes / 1048576).toFixed(1)} MiB`;
-            })
+                $('offlineStatus').textContent = `Downloading ${Math.floor(progress.done / progress.total * 100)}% · ${progress.done} / ${progress.total} files · ${(progress.bytes / 1048576).toFixed(1)}${progress.totalBytes ? ' / ' + (progress.totalBytes / 1048576).toFixed(1) : ''} MiB`;
+            }, downloadController.signal)
         );
+        notice('Offline game ready. You can return here without a connection.');
         await storageInfo();
     } catch (error) {
-        offlineStatus(await offlineAction('offline-status'));
-        throw error;
+        try { offlineStatus(await offlineAction('offline-status')); } catch {}
+        if (downloadController.signal.aborted) notice('Download cancelled. Existing offline files and character saves are kept.');
+        else throw error;
     } finally {
+        downloadController = null;
+        $('cancelOffline').hidden = true;
+        $('removeOffline').disabled = false;
         $('offlineProgress').hidden = true;
     }
 });

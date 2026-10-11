@@ -30,3 +30,11 @@ A clean-build gameplay check exposed an upstream packing-order defect: `CrcBuffe
 After correcting the CRC table, the fresh co-op package passed optimized-client world startup, real character login and committed character saving. The solo build mirrors the polished Site launcher from `src/solo/`, sharing the same storage/protocol/device modules as co-op.
 
 The final polished solo `dist/` also passed optimized world startup, character login and committed saving on the production Node host. The production startup checksum guard accepted the finished package. Both hosting archives were regenerated after verification.
+
+## Download audit (2026-10-11)
+
+Offline updates now verify unique manifest entries and total byte counts, stage into a separate cache, and replace the active pointer only after all file hashes pass. Cancelled downloads, corrupt updates, quota failures and failed repairs of the same revision keep the existing cache. The UI shows percentage/bytes, provides cancellation when supported by the installed worker, and resets controls after completion. Older installed workers retain their existing behavior until the browser activates the update.
+
+World backups now use a world-name/UTC-timestamp filename, attach the download link for browser compatibility, and retain its object URL for 60 seconds. The launcher reports when the backup download starts.
+
+Validation passed: optimized solo build and complete asset/CRC verification; HTTP hosting regression; mobile settings without horizontal overflow; full-pack browser download; cancel/retry; duplicate/corrupt manifest, injected Cache API quota failure, cancelled update and failed same-revision repair. With the test server stopped, the browser started the cached game, logged in a character, saved it, exported a session backup, imported it as a distinct world with the character intact, and exported again through the saved-world controls. No unexpected browser exceptions occurred. The shared download helper/worker and polished solo UI are identical to the private Site package. Both hosting archives were refreshed.

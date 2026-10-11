@@ -65,6 +65,7 @@
     "build:web:solo": "node tools/build-web.mjs --solo",
     "start": "node tools/serve-coop.mjs --production",
     "test:hosting": "node --test tools/tests/hosting.test.mjs",
+    "test:downloads": "node tools/tests/browser-downloads.cjs",
     "setup:server": "node tools/setup-coop.mjs --server-only",
     "setup:web": "npm run setup:server && npm run build:web"
   },

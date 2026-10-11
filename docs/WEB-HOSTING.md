@@ -59,3 +59,17 @@ LORESCAPE_PRODUCTION_DIR=dist node tools/tests/browser-production.cjs
 ```
 
 For an existing `dist/`, run `node tools/tests/browser-production.cjs` with `LORESCAPE_PRODUCTION_DIR=dist` and the running server's `LORESCAPE_TEST_URL`. Set `LORESCAPE_PLAYWRIGHT_PATH` and `LORESCAPE_CHROMIUM_PATH` if the browser test dependencies are installed elsewhere. The test instruments only its browser response, then verifies optimized-client login, device settings, world loading and character saving. Browser profiles/origins own saves; changing hostnames does not transfer them. Export backups before moving a game to another origin.
+
+## Offline download and portable saves
+
+Open **Display, audio & offline settings** in the launcher, then **Download offline game** while connected. The verified game pack stays in that browser profile; progress shows a percentage, file count and downloaded size. Cancellation, failed verification and full storage retain the previous pack. End active games in every tab before updating or removing offline files. Offline game removal keeps character saves.
+
+Export a world backup from the saved-world controls or during a session. Its filename includes the world name and UTC timestamp. Import the JSON backup on another browser/device to move your progress. Keep these files outside the browser: clearing browser data removes both local game downloads and local saves. A previously installed service worker updates through the browser lifecycle; close all LoreScape tabs and reopen after an app update to activate the newest download controls.
+
+Download regression checks against a completed optimized solo build:
+
+```sh
+node tools/tests/browser-downloads.cjs
+```
+
+Set `LORESCAPE_PLAYWRIGHT_PATH` and `LORESCAPE_CHROMIUM_PATH` when Playwright/Chromium are installed outside the normal module or browser paths. The check starts an isolated local server, downloads the entire pack, injects update/cancellation/storage faults, stops the server, logs into the offline world, saves a character, and validates exported backups and restore.
