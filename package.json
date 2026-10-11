@@ -4,7 +4,8 @@
   "description": "This project is a comprehensive source port of our [Client refactor](https://github.com/2004scape/Client) to TypeScript.",
   "dependencies": {
     "foundation-sites": "^6.8.1",
-    "jquery": "^3.7.1"
+    "jquery": "^3.7.1",
+    "ws": "8.18.0"
   },
   "devDependencies": {
     "@types/foundation-sites": "^6.4.3",
@@ -38,8 +39,14 @@
     "webpack-dev-server": "^4.15.2"
   },
   "scripts": {
+    "setup:coop": "node tools/setup-coop.mjs",
+    "bundle:coop": "node tools/bundle-coop.mjs && node tools/offline-manifest.mjs",
+    "coop": "node tools/serve-coop.mjs",
+    "test:coop": "node tools/smoke-coop.cjs",
+    "test:session": "node --test tools/tests/*.test.mjs",
     "build": "npm run asc && webpack --mode=production --node-env=production",
     "build:dev": "npm run asc && webpack --mode=development",
+    "build:coop": "npm run asc && webpack --mode=development --env coop && node tools/offline-manifest.mjs",
     "build:prod": "npm run asc && webpack --mode=production --node-env=production",
     "dev": "npm run asc && webpack-dev-server --hot",
     "lint": "eslint . --ext .ts",
@@ -49,7 +56,11 @@
     "test": "npm run asc && jest",
     "asc": "asc --target release --optimizeLevel 3 --converge",
     "local": "npm run build:dev && npx serve public",
-    "prod": "npm run build && npx http-server -c-1"
+    "prod": "npm run build && npx http-server -c-1",
+    "test:offline": "node tools/tests/browser-offline.cjs",
+    "test:storage": "node tools/tests/browser-storage.cjs",
+    "test:production": "npm run asc && webpack --mode=production --node-env=production --env coop --output-path .local/production-client && node tools/tests/browser-production.cjs",
+    "test:personas": "node tools/tests/browser-personas.cjs"
   },
   "repository": {
     "type": "git",

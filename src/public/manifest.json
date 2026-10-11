@@ -1,15 +1,23 @@
 {
-  "name": "2004Scape",
+  "name": "LoreScape",
   "icons": [
+    {
+      "src": "/coop/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
     {
       "src": "/manifest.png",
       "type": "image/png",
       "sizes": "144x144"
     }
   ],
-  "id": "/",
-  "start_url": ".",
-  "background_color": "#212121",
-  "display": "minimal-ui",
-  "theme_color": "#212121"
+  "id": "/coop.html",
+  "start_url": "/coop.html",
+  "background_color": "#101c1b",
+  "display": "standalone",
+  "theme_color": "#101c1b",
+  "short_name": "LoreScape",
+  "scope": "/"
 }

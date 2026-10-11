@@ -4,6 +4,7 @@ export default class Database {
     constructor(db: IDBDatabase) {
         db.onerror = this.onerror;
         db.onclose = this.onclose;
+        db.onversionchange = (): void => db.close();
         this.db = db;
     }
 
@@ -30,44 +31,29 @@ export default class Database {
         });
     };
 
+    // This database only caches rebuildable assets; failure must not prevent play.
     cacheload = async (name: string): Promise<Int8Array | undefined> => {
         return await new Promise<Int8Array | undefined>((resolve): void => {
-            const transaction: IDBTransaction = this.db.transaction('cache', 'readonly');
-            const store: IDBObjectStore = transaction.objectStore('cache');
-            const request: IDBRequest<Int8Array> = store.get(name); // this.genHash(name)
-
-            request.onsuccess = (): void => {
-                // console.log('cacheload successful!');
-                resolve(request.result);
-            };
-
-            request.onerror = (event: Event): void => {
-                // console.error('cacheload error!:', event);
+            try {
+                const request: IDBRequest<Int8Array> = this.db.transaction('cache', 'readonly').objectStore('cache').get(name);
+                request.onsuccess = (): void => resolve(request.result);
+                request.onerror = (): void => resolve(undefined);
+            } catch {
                 resolve(undefined);
-            };
+            }
         });
     };
 
     cachesave = async (name: string, src: Int8Array): Promise<void> => {
-        return await new Promise<void>((resolve, reject): void => {
-            // if (src.length > 2000000) {
-            //     reject();
-            //     return;
-            // }
-
-            const transaction: IDBTransaction = this.db.transaction('cache', 'readwrite');
-            const store: IDBObjectStore = transaction.objectStore('cache');
-            const request: IDBRequest<IDBValidKey> = store.put(src, name); // this.genHash(name)
-
-            request.onsuccess = (): void => {
-                // console.log('cachesave successful!');
+        return await new Promise<void>((resolve): void => {
+            try {
+                const transaction: IDBTransaction = this.db.transaction('cache', 'readwrite');
+                transaction.objectStore('cache').put(src, name);
+                transaction.oncomplete = (): void => resolve();
+                transaction.onerror = transaction.onabort = (): void => resolve();
+            } catch {
                 resolve();
-            };
-
-            request.onerror = (event: Event): void => {
-                // console.error('cachesave error!:', event);
-                reject();
-            };
+            }
         });
     };
 

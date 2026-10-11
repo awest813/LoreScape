@@ -248,7 +248,7 @@ export default abstract class GameShell {
     };
 
     protected setTargetedFramerate = (rate: number): void => {
-        this.tfps = Math.max(Math.min(50, rate | 0), 0);
+        this.tfps = Math.max(Math.min(50, rate | 0), 1);
     };
 
     protected start = (): void => {

@@ -12,6 +12,10 @@ type WorldList = {
 };
 
 export async function setupConfiguration(): Promise<void> {
+    if (['998', '999'].includes(GameShell.getParameter('world')) && !GameShell.getParameter('coop')) {
+        window.location.replace('/coop.html');
+        return;
+    }
     await world();
     detail();
     method();

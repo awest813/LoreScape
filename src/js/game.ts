@@ -326,9 +326,11 @@ class Game extends Client {
             World3D.init(512, 334, 500, 800, distance);
             WordFilter.unpack(wordenc);
             this.initializeLevelExperience();
+            if (Game.getParameter('coop') === '1') window.parent.postMessage({type: 'coop-client-ready', startupId: Game.getParameter('startup')}, location.origin);
         } catch (err) {
             console.error(err);
             this.errorLoading = true;
+            if (Game.getParameter('coop') === '1') window.parent.postMessage({type: 'coop-client-error', startupId: Game.getParameter('startup'), message: err instanceof Error ? err.message.slice(0, 200) : 'Client loading failed'}, location.origin);
         }
     };
 
@@ -363,6 +365,7 @@ class Game extends Client {
 
     showProgress = async (progress: number, str: string): Promise<void> => {
         console.log(`${progress}%: ${str}`);
+        if (Game.getParameter('coop') === '1') window.parent.postMessage({type: 'coop-client-progress', startupId: Game.getParameter('startup'), progress, message: str}, location.origin);
 
         await this.loadTitle();
         if (!this.titleArchive) {

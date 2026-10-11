@@ -5,6 +5,7 @@ import {sleep} from '../util/JsUtil';
 export default class ClientWorkerStream {
     // constructor
     private readonly worker: Worker;
+    private readonly uniqueId: string;
     public wwin: WorkerReader;
     private readonly wwout: WorkerWriter;
 
@@ -14,6 +15,7 @@ export default class ClientWorkerStream {
 
     constructor(worker: Worker, uniqueId: string) {
         this.worker = worker;
+        this.uniqueId = uniqueId;
         this.worker.onerror = this.onerror;
         this.worker.onmessageerror = this.onmessageerror;
         this.wwin = new WorkerReader(5000);
@@ -48,7 +50,9 @@ export default class ClientWorkerStream {
     }
 
     close(): void {
+        if (this.closed) return;
         this.closed = true;
+        this.worker.postMessage({type: 'close', id: this.uniqueId});
         this.wwin.close();
         this.wwout.close();
         console.log('connection close!');
@@ -162,7 +166,7 @@ class WorkerReader {
         }
 
         if (this.closed) {
-            throw new Error('WorkerReader is closed!');
+            return;
         }
         const event: WorkerEvent = new WorkerEvent(new Uint8Array(msg.data));
         if (this.event) {

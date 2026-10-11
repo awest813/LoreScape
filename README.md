@@ -48,6 +48,8 @@ A developer can utilize the debug command for development purposes.
 
 ## First Time Installation
 
+For LoreScape's private four-player browser experience, use the [co-op setup guide](docs/COOP-SETUP.md) and [implementation plan](docs/COOP-IMPLEMENTATION-PLAN.md). Run `npm ci`, `npm run setup:coop`, then `npm run coop`. The setup pins a compatible historical server and adapts its browser bundler; the general upstream client development instructions follow below.
+
 ```shell
 npm install
 npm run prepare
@@ -74,15 +76,12 @@ This is not to be confused with the Java TeaVM client which is hosted here if th
 
 http://localhost/client?world=0&detail=high&method=0 (Java)
 
-## Web Worker server and WebRTC peer to peer connections
+## Offline single-player and private co-op
 
-A web worker server will start when loading world 999. This works as a no install, offline, singleplayer version of the server. You will need to self host in order to load saves.
+Run `npm ci`, `npm run setup:coop`, and `npm run coop`, then open the lobby at http://localhost:8080/coop.html. Choose **Play solo** for local play, or create a saved world and share its room code with three friends. Download the offline game once to keep solo play available after stopping the server. The host's browser runs the original world and automatically saves party progression. WebRTC and optional application relay replace the upstream clipboard handshake.
 
-How to use:
-1. Run `npm run build` and then `npm run bundle` in the server, this copies all required files to `../Client2/public`. Start client with `npm run prod`.
-2. A save dialog will open on logout, you should save to `/public/data/players`.
-3. Optional: To host on github uncomment the lines starting with `!/public` in the [.gitignore](.gitignore).
+The lobby includes Chromebook battery/display settings, offline downloads, browser storage status, world management, party status, host removal controls, XP and NPC loot quantity settings, shared loot, and backup/recovery controls. See the [setup guide](docs/COOP-SETUP.md) for secure hosting, persistence scope, and test commands, and the [verification record](docs/COOP-VERIFICATION.md) for tested behavior and remaining external checks.
 
-Combined with WebRTC connections you'll be able to host servers using just your browser by manually exchanging a message for each peer. Players that want to join will have to be on world 998 which won't start a web worker server.
+The [code audit](docs/CODE-AUDIT.md) records storage/transport fixes and the offline persistence contract.
 
-Clicking `New user` on login screen or additionally `::peer` ingame for hosts will open a prompt and write either an offer (host) or answer (peer) to clipboard automatically. This message can contain your public IP. Pass the offer to the peer, peer returns the answer and you'll be connected! Closing the prompt will reset the process and allows for any amount of peers.
+The [gameplay test report](docs/PERSONA-TEST-REPORT.md) records 20 passing scripted sessions across eight player styles, including skilling, combat, four-player chat, backup transfer and device controls. Run `npm run test:personas` with a development co-op build and local server; the report documents browser paths and test limits.

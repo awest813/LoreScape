@@ -34,7 +34,7 @@ import JString from './jagex2/datastruct/JString';
 import IdkType from './jagex2/config/IdkType';
 import {downloadUrl, sleep} from './jagex2/util/JsUtil';
 import Bzip from './vendor/bzip';
-import {playMidi, stopMidi} from './jagex2/util/AudioUtil';
+import {playMidi, stopMidi, setAudioMuted} from './jagex2/util/AudioUtil';
 import LocType from './jagex2/config/LocType';
 import NpcType from './jagex2/config/NpcType';
 import FloType from './jagex2/config/FloType';
@@ -720,14 +720,31 @@ export abstract class Client extends GameShell {
     };
 
     protected initWorkerP2P = (): void => {
+        const preferences: {fps?: number; mute?: boolean} | undefined = (window.parent as Window & {LoreCoop?: {preferences?: {fps: number; mute: boolean}}}).LoreCoop?.preferences;
+        if (preferences) this.applyCoopPreferences(preferences);
+        window.addEventListener('message', (event: MessageEvent): void => {
+            if (preferences && event.source === window.parent && event.origin === location.origin && event.data?.type === 'coop-device') this.applyCoopPreferences(event.data.preferences);
+        });
+        window.addEventListener(
+            'keydown',
+            (event: KeyboardEvent): void => {
+                if (preferences && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    window.parent.postMessage({type: 'coop-save-shortcut'}, location.origin);
+                }
+            },
+            true
+        );
         if (Client.getParameter('world') === '999') {
             this.worker = new Worker('worker.js', {type: 'module'});
             this.worker.onmessage = this.onmessage;
+            (window.parent as Window & {LoreCoop?: {attachWorker(worker: Worker): void}}).LoreCoop?.attachWorker(this.worker);
             this.host = new Host(this.worker);
         } else if (Client.getParameter('world') === '998') {
             this.worker = {
                 onmessage: (e: MessageEvent): void => {
-                    (this.stream as ClientWorkerStream).wwin.onmessage(e);
+                    (this.stream as ClientWorkerStream | null)?.wwin.onmessage(e);
                 },
                 postMessage: (e: MessageEvent): void => {
                     if (this.peer && this.peer.dc && this.peer.dc.readyState === 'open') {
@@ -753,7 +770,14 @@ export abstract class Client extends GameShell {
         }
     };
 
+    private applyCoopPreferences(preferences: {fps?: number; mute?: boolean}): void {
+        if (!preferences) return;
+        if ([15, 30, 50].includes(preferences.fps || 0)) this.setTargetedFramerate(preferences.fps!);
+        if (typeof preferences.mute === 'boolean') setAudioMuted(preferences.mute);
+    }
+
     protected onmessage = (e: MessageEvent): void => {
+        if (e.data.type?.startsWith('coop-')) return;
         switch (e.data.type) {
             case 'ready':
                 this.workerReady = true;
@@ -768,34 +792,14 @@ export abstract class Client extends GameShell {
         }
 
         if (this.host?.uniqueId === e.data.id) {
-            (this.stream as ClientWorkerStream).wwin.onmessage(e.data);
+            (this.stream as ClientWorkerStream | null)?.wwin.onmessage(e.data);
         } else {
             this.host?.postMessage(e);
         }
     };
 
     protected exchangeSDP = async (): Promise<void> => {
-        if (+Client.getParameter('world') === 999) {
-            if (this.host) {
-                await this.host.setupPeerConnection();
-            }
-        } else if (+Client.getParameter('world') === 998) {
-            if (this.peer) {
-                if (this.peer.dc) {
-                    console.log('You are already connected.');
-                    return;
-                }
-
-                const offer: string | null = prompt('Paste offer here, answer will be copied to clipboard');
-                if (offer) {
-                    try {
-                        await this.peer.handleOffer(offer);
-                    } catch (e) {
-                        console.error(e);
-                    }
-                }
-            }
-        }
+        await this.host?.setupPeerConnection();
     };
 
     protected loadArchive = async (filename: string, displayName: string, crc: number, progress: number): Promise<Jagfile> => {
