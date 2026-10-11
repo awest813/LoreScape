@@ -6,7 +6,7 @@
         <title>LoreScape · Offline & private co-op</title>
         <meta name="theme-color" content="#101c1b" />
         <link rel="manifest" href="/manifest.json" />
-        <link rel="stylesheet" href="coop/style.css" />
+        <link rel="stylesheet" href="/coop/style.css" />
     </head>
     <body>
         <main>
@@ -27,7 +27,7 @@
                             <option value="">Create a new world</option>
                         </select></label
                     ><label>World name<input id="worldName" maxlength="60" value="My world" /></label>
-                    <div class="row"><button id="solo">Play solo</button><button id="host" class="secondary">Create private room</button></div>
+                    <div class="row"><button id="solo">Play solo</button><button data-room-only id="host" class="secondary">Create private room</button></div>
                     <p id="worldInfo">Create a world to start an adventure.</p>
                     <p>Your browser keeps the party’s characters. Export backups to keep a portable copy.</p>
                     <div class="row">
@@ -36,16 +36,16 @@
                     </div>
                 </article>
                 <article>
-                    <h2>Join friends</h2>
-                    <label>Room code<input id="code" maxlength="12" autocomplete="off" placeholder="8-character code" /></label
-                    ><label
+                    <h2 data-room-only>Join friends</h2>
+                    <label data-room-only>Room code<input id="code" maxlength="12" autocomplete="off" placeholder="8-character code" /></label
+                    ><label data-room-only
                         >Connection<select id="transport">
                             <option value="auto">Automatic · WebRTC with relay fallback</option>
                             <option value="relay">Relay · restricted networks</option>
                             <option value="rtc">WebRTC only</option>
                         </select></label
-                    ><button id="join">Join room</button>
-                    <p>The host keeps your progress. Rejoin the same world with your character name.</p>
+                    ><button data-room-only id="join">Join room</button>
+                    <p data-room-only>The host keeps your progress. Rejoin the same world with your character name.</p>
                     <label>Import backup<input id="importFile" type="file" accept=".json,application/json" /></label>
                     <div id="importPreview" hidden>
                         <p id="importDescription"></p>
@@ -142,6 +142,6 @@
             </section>
             <footer>Character progression, shared inventories, world variables, and settings persist. NPCs, ground items, and temporary world changes reset between sessions.</footer>
         </main>
-        <script type="module" src="coop/lobby.mjs"></script>
+        <script type="module" src="/coop/lobby.mjs"></script>
     </body>
 </html>

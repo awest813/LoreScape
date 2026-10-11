@@ -131,7 +131,7 @@ self.addEventListener('fetch', event => {
             } catch {
                 const manifest = await active();
                 if (manifest) {
-                    const key = url.pathname === '/' ? (url.searchParams.has('world') ? '/index.html' : '/coop.html') : url.pathname;
+                    const key = url.pathname === '/' ? (url.searchParams.has('world') ? '/index.html' : '/coop.html') : ['/coop', '/coop/'].includes(url.pathname) ? '/coop.html' : url.pathname;
                     const cached = await (await caches.open(PREFIX + manifest.revision)).match(key);
                     if (cached) return cached;
                 }

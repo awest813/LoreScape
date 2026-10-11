@@ -2,10 +2,11 @@ import { readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { root, serverDir, serverCommit } from './coop-config.mjs';
+import {writeClientCrc} from './client-crc.mjs';
 
 const revision = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: serverDir, encoding: 'utf8' });
 if (revision.status !== 0 || revision.stdout.trim() !== serverCommit) throw new Error('Server revision does not match the pinned baseline.');
-const output = path.join(root, 'public') + path.sep;
+const output = path.resolve(process.env.LORESCAPE_BUNDLE_DIR || path.join(root, 'public')) + path.sep;
 const adapter = path.join(serverDir, '.lorescape-bundle.mjs');
 let source = readFileSync(path.join(serverDir, 'bundle.js'), 'utf8');
 const target = "const outDir = '../Client2/public/';";
@@ -35,7 +36,10 @@ try {
 // friends backend requires a separate Node/WebSocket service. Private sessions
 // use local chat; discard backend messages until a local party system is added.
 writeFileSync(path.join(output, 'FriendThread.js'), 'self.onmessage = () => {};\n');
+// Upstream initializes CRCs before packing archives on the first clean build,
+// leaving an all-zero table that the live worker rejects during character login.
+writeClientCrc(output);
 for (const file of ['worker.js', 'LoginThread.js', 'FriendThread.js', 'bzip2.wasm', 'rsmod-pathfinder.wasm', 'data/pack/client/crc']) {
     if (!existsSync(path.join(output, file))) throw new Error(`Bundle missing ${file}`);
 }
-console.log('Browser server bundle copied to LoreScape/public.');
+console.log(`Browser server bundle copied to ${output}.`);

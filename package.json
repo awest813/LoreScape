@@ -56,11 +56,17 @@
     "test": "npm run asc && jest",
     "asc": "asc --target release --optimizeLevel 3 --converge",
     "local": "npm run build:dev && npx serve public",
-    "prod": "npm run build && npx http-server -c-1",
+    "prod": "npm run build:web && npm start",
     "test:offline": "node tools/tests/browser-offline.cjs",
     "test:storage": "node tools/tests/browser-storage.cjs",
     "test:production": "npm run asc && webpack --mode=production --node-env=production --env coop --output-path .local/production-client && node tools/tests/browser-production.cjs",
-    "test:personas": "node tools/tests/browser-personas.cjs"
+    "test:personas": "node tools/tests/browser-personas.cjs",
+    "build:web": "node tools/build-web.mjs",
+    "build:web:solo": "node tools/build-web.mjs --solo",
+    "start": "node tools/serve-coop.mjs --production",
+    "test:hosting": "node --test tools/tests/hosting.test.mjs",
+    "setup:server": "node tools/setup-coop.mjs --server-only",
+    "setup:web": "npm run setup:server && npm run build:web"
   },
   "repository": {
     "type": "git",
@@ -82,5 +88,8 @@
       "npm run format",
       "npm run lint:fix"
     ]
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

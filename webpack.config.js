@@ -98,14 +98,15 @@ const config = {
 
 module.exports = (env = {}) => {
     if (env.coop) {
+        config.output.publicPath = '/';
         config.entry = {index: config.entry.index};
         config.plugins = config.plugins.filter(plugin => !(plugin instanceof HtmlWebpackPlugin) || plugin.options.filename === 'index.html');
     }
     if (isProduction) {
         config.mode = 'production';
-        config.plugins.push(new MiniCssExtractPlugin());
-        config.plugins.push(
+        config.optimization = {minimizer: [
             new TerserPlugin({
+                extractComments: false,
                 minify: TerserPlugin.terserMinify,
                 parallel: true,
                 terserOptions: {
@@ -118,7 +119,7 @@ module.exports = (env = {}) => {
                     }
                 }
             })
-        );
+        ]};
     } else {
         config.mode = 'development';
     }

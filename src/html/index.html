@@ -1,5 +1,8 @@
 <html>
 <head>
+    <script>
+        if (!new URLSearchParams(location.search).has('world')) location.replace('/coop.html');
+    </script>
     <title>RuneScape 2</title>
 
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -16,6 +19,7 @@
             color: #fff;
             background-color: #000;
         }
+        html, body { width: 100%; height: 100%; overflow: hidden; overscroll-behavior: none; }
 
         canvas {
             display: block;

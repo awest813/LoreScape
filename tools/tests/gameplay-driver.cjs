@@ -23,8 +23,10 @@ async function instrument(page) {
         delete headers['if-none-match'];
         const response = await route.fetch({headers});
         const source = await response.text();
-        assert(source.includes('new Game().run()'), `Use build:coop development output: ${response.status()} ${route.request().url()} (${source.length} bytes)`);
-        await route.fulfill({response, body: source.replace('new Game().run()', '(window.__playGame = new Game()).run()')});
+        const optimized = /\(new ([\w$]+)\)\.run\(\)/;
+        assert(source.includes('new Game().run()') || optimized.test(source), `Game bootstrap missing: ${response.status()} ${route.request().url()} (${source.length} bytes)`);
+        const body = source.includes('new Game().run()') ? source.replace('new Game().run()', '(window.__playGame = new Game()).run()') : source.replace(optimized, '(window.__playGame = new $1).run()');
+        await route.fulfill({response, body});
     });
     await page.route('**/worker.js', async route => {
         const headers = {...route.request().headers()};

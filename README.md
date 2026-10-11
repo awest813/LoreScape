@@ -48,6 +48,8 @@ A developer can utilize the debug command for development purposes.
 
 ## First Time Installation
 
+For production builds and self-hosting, see the [web hosting guide](docs/WEB-HOSTING.md). Run `npm ci`, `npm run setup:web`, and `npm start` for the complete optimized web app.
+
 For LoreScape's private four-player browser experience, use the [co-op setup guide](docs/COOP-SETUP.md) and [implementation plan](docs/COOP-IMPLEMENTATION-PLAN.md). Run `npm ci`, `npm run setup:coop`, then `npm run coop`. The setup pins a compatible historical server and adapts its browser bundler; the general upstream client development instructions follow below.
 
 ```shell

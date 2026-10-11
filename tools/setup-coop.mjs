@@ -28,6 +28,10 @@ writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
 copyFileSync(path.join(root, 'tools/locks/server-package-lock.json'), path.join(serverDir, 'package-lock.json'));
 run('npm', ['ci', '--no-audit', '--no-fund'], serverDir);
 run('npm', ['run', 'build'], serverDir);
+if (process.argv.includes('--server-only')) {
+    console.log('Pinned server content ready.');
+    process.exit(0);
+}
 run(process.execPath, [path.join(root, 'tools/bundle-coop.mjs')], root);
 run('npm', ['run', 'build:coop'], root);
 console.log('Co-op ready. Run npm run coop to open the private lobby.');

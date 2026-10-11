@@ -8,6 +8,8 @@ The hosted copy supports browser-hosted solo play, local saves, backup import/ex
 
 Deployment source: `/workspace/sites/lorescape-play`. The static package contains only the offline manifest's required assets plus the service worker and manifest. Root navigation redirects to the lobby; the original query-based iframe game route remains available. Asset hashes were regenerated after the hosted HTML changes. No player saves were packaged.
 
-Published source commit: `43e4b0cfa89ef16fe04ea81647bbf50755507545`.
+Published source and deployment versions are tracked in the Site repository; production self-hosting builds are tracked in this GitHub repository.
 
 Validation: fresh keyboard login/character creation and movement/save/restart passed on the local server; movement/save/restart also passed against the exact static package before deployment. The hosting service reported successful private deployment. The authenticated live-site gameplay flow has not been independently automated.
+
+For a repeatable production package or your own Node/static host, see [WEB-HOSTING.md](WEB-HOSTING.md). The polished solo launcher is mirrored in `src/solo/`; the GitHub build supports private co-op and the same solo export.
