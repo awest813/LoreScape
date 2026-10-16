@@ -1,0 +1,45 @@
+.lore-header, .lore-status, .lore-intro, .lore-help, .lore-footer {
+    box-sizing: border-box;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+}
+.lore-header {
+    background: #151b19;
+    color: #edf2e9;
+    padding: 22px max(20px, calc((100% - 1000px) / 2)) 0;
+    border-bottom: 1px solid #364139;
+    a { color: inherit; text-decoration: none; }
+}
+.lore-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.lore-brand { font-family: Georgia, serif; font-size: 29px; font-weight: bold; letter-spacing: -.5px; }
+.lore-brand span { display: block; font: normal 12px/1.7 system-ui, sans-serif; color: #c2cebf; letter-spacing: .3px; }
+.lore-source { font-size: 12px; text-align: right; }
+.lore-nav { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 20px; }
+.lore-nav a { padding: 8px 0 12px; border-bottom: 2px solid transparent; }
+.lore-nav a[aria-current=page] { color: #e7c784; border-color: #e7c784; }
+.lore-header a:hover { color: #e7c784; }
+.lore-header a:focus-visible, .lore-status button:focus-visible, .lore-intro :focus-visible, canvas:focus-visible { outline: 2px solid #e7c784; outline-offset: 4px; }
+.lore-skip { position: absolute; top: -100px; background: #151b19; padding: 8px; z-index: 10; }
+.lore-skip:focus { top: 4px; }
+.lore-status { background: #1d2722; color: #e1e9df; padding: 12px 20px; text-align: center; }
+.lore-status p { margin: 0; }
+.lore-status-error { background: #3b2522; color: #ffe0cc; }
+.lore-status button, .lore-intro button { font: inherit; cursor: pointer; color: #182018; background: #e7c784; border: 0; border-radius: 5px; padding: 8px 16px; font-weight: 650; }
+.lore-status button { margin-top: 10px; }
+.lore-intro { max-width: 829px; margin: 26px auto 20px; padding: 0 20px; }
+.lore-intro h1 { font: 26px/1.3 Georgia, serif; margin: 0 0 8px; color: #f1e5c8; }
+.lore-intro p { color: #c2cebf; margin: 0 0 14px; }
+.lore-settings { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.lore-settings label { display: flex; flex-direction: column; gap: 4px; color: #d7e1d3; }
+.lore-settings input, .lore-settings select { box-sizing: border-box; width: 140px; border: 1px solid #536052; border-radius: 5px; background: #18211b; color: #fff; font: inherit; padding: 8px; height: 40px; margin: 0; }
+.lore-settings button { min-height: 40px; }
+.lore-game { margin: 0; background: #101510; color: #edf2e9; }
+.lore-game canvas { display: block; max-width: 100%; height: auto; margin: 0 auto; background: #000; touch-action: none; }
+.lore-help, .lore-footer { max-width: 829px; padding: 0 20px; margin: 22px auto; color: #c2cebf; }
+.lore-help summary { cursor: pointer; color: #e7c784; }
+.lore-help a, .lore-footer a { color: #e7c784; text-decoration: underline; }
+.lore-footer { border-top: 1px solid #364139; padding-top: 18px; font-size: 12px; }
+@media (max-width: 480px) { .lore-heading { align-items: start; } .lore-brand { font-size: 25px; } .lore-nav { gap: 0 15px; } .lore-intro { margin-top: 20px; } }
+// Preserve the client's coordinate system while fitting tool canvases to narrow screens.
+canvas#canvas { max-width: 100%; height: auto; }

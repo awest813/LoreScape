@@ -16,3 +16,6 @@ public/data/players/
 # !/public/worker.js
 # !/public/bzip2.wasm
 # !/public/rsmod-pathfinder.wasm
+
+/work/
+/test-results/

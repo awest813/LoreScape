@@ -1,88 +1,77 @@
-<div align="center">
+# LoreScape
 
-<h1>2004Scape Client2 - May 18, 2004</h1>
+A browser client and collection of cache tools based on the [2004Scape TypeScript client](https://github.com/2004scape/Client2), a source port of the 2004 client refactor.
 
-[Website](https://2004scape.org) | [Discord](https://discord.2004scape.org) | [Rune-Server](https://www.rune-server.ee/runescape-development/rs2-server/projects/701698-lost-city-225-emulation.html)
+The home page provides world and graphics controls, keyboard-accessible navigation, loading progress, and recovery messages. Game files and live worlds come from the 2004Scape services. **GitHub Pages hosts only the website; it does not run a game server.** Availability, account requirements, membership, and cross-origin access are controlled by the selected server.
 
-**status: completely ported**
+## Develop locally
 
-**The client code was source ported to TypeScript by us.**  
-**Jagex has never had any source code leaks.**
-</div>
+Use Node.js 22.22.1 or newer (`nvm use` selects the latest Node 22 release):
 
-## Site Index
-
-### Client
-
-Try out the client hosted on Github! It is 100% source ported and available to use.
-Create your account on the 2004scape website.
-
-| World           | High Detail                                                                    | Low Detail                                                                    | Members |
-|-----------------|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------|---------|
-| 1 (Central USA) | [Play Now!](https://2004scape.github.io/Client2/?world=1&detail=high&method=0) | [Play Now!](https://2004scape.github.io/Client2/?world=1&detail=low&method=0) | No      |
-| 2 (Central USA) | [Play Now!](https://2004scape.github.io/Client2/?world=2&detail=high&method=0) | [Play Now!](https://2004scape.github.io/Client2/?world=2&detail=low&method=0) | Yes     |
-| 3 (Germany)     | [Play Now!](https://2004scape.github.io/Client2/?world=3&detail=high&method=0) | [Play Now!](https://2004scape.github.io/Client2/?world=3&detail=low&method=0) | Yes     |
-| 4 (Germany)     | [Play Now!](https://2004scape.github.io/Client2/?world=4&detail=high&method=0) | [Play Now!](https://2004scape.github.io/Client2/?world=4&detail=low&method=0) | No      |
-
-### <a href="https://2004scape.github.io/Client2/playground" target="_blank">Playground</a> - An Interactive Model Viewer
-### <a href="https://2004scape.github.io/Client2/items" target="_blank">Items Viewer</a> - View All the Items
-### <a href="https://2004scape.github.io/Client2/mesanim" target="_blank">Message Animation Viewer</a> - A Chat Message Animation Editor
-### <a href="https://2004scape.github.io/Client2/sounds" target="_blank">Sounds Viewer</a> - Sounds Viewer & Listener
-### <a href="https://2004scape.github.io/Client2/viewer" target="_blank">Viewer</a> - A Cache Viewer (WIP)
-### <a href="https://2004scape.github.io/Client2/interface-editor" target="_blank">Interface Editor</a> - An Interface Editor (WIP)
-
----
-
-## Commands
-
-`::debug` Shows performance metrics (FPS, frame times and more).
-
-`::chat` Changes between 3 different chat font eras.
-
-`::fps` Set a targeted FPS (ex. `::fps 30`)
-
-A developer can utilize the debug command for development purposes.
-![debugging](https://github.com/2004scape/Client2/assets/76214316/9cec6fb5-7a79-4d81-97ed-a96a5fecd85a)
-
----
-
-## First Time Installation
-
-```shell
-npm install
-npm run prepare
-npm run build:dev
+```sh
+npm ci
+npm run dev
 ```
 
-If you are on a Mac:
-```shell
-chmod ug+x .husky/*
-chmod ug+x .git/hooks/*
+Open `http://localhost:8080/`. The client defaults to live world 1. Choose a world in the form or use `?world=1&detail=low&method=0`. Low detail is useful on slower devices. Desktop keyboard and mouse are recommended; the canvas scales to smaller screens.
+
+World 0 connects to a separately running local server at `http://localhost`. Use the local HTTP development site for world 0. HTTPS-hosted Pages cannot use this configuration. Worlds 998 and 999 require separate peer/worker server bundles and game data; they are not included in a normal build.
+
+## Validate and build
+
+```sh
+npm run lint
+npm run typecheck
+npm test -- --runInBand
+npm run build
+npm run check:pages
 ```
 
-## Local
+The build compiles the Bzip2 WebAssembly module and writes the website to `public/`. It uses relative asset paths, so the same build works at `/LoreScape/`, at another repository path, or on a root/custom domain. JavaScript and CSS use content hashes and shared chunks. Keep the generated HTML, JavaScript, CSS, WebAssembly, soundfont, manifest, and icons together.
 
-Local development should be done with: `npm run dev`
+To preview production locally, run `npm run preview` after building. To test the exact generated files with any static HTTP server, serve `public/`; do not open the HTML using `file://`.
 
-The client will automatically launch connecting to World 1.
-Local world is hosted on World 0.
-You have the ability to connect to live servers from the local client by changing the param.
+`public/` is generated and ignored by Git. Save source edits in `src/`. Optional server bundles/data placed in `public/` must be supplied separately in every deployment; never publish player saves or credentials.
 
-http://localhost:8080/?world=0&detail=high&method=0 (TypeScript)
+## Audit limits
 
-This is not to be confused with the Java TeaVM client which is hosted here if the local server is running:
+Production dependencies currently have no known npm advisories. The development dependency tree retains 25 advisories (5 high, 20 moderate), rooted in unpatched releases of `braces` and `sprintf-js`. Critical findings from the original lockfile have been resolved. Review `npm audit` as upstream patches become available; the development server is not part of the Pages deployment.
 
-http://localhost/client?world=0&detail=high&method=0 (Java)
+The build succeeds with Sass deprecation warnings from the legacy Foundation styles and bundle-size warnings. A future Sass migration remains necessary. Automated browser checks use controlled world-service responses; live login and gameplay require verification against the selected external server from the deployed origin.
 
-## Web Worker server and WebRTC peer to peer connections
+## Deploy to GitHub Pages
 
-A web worker server will start when loading world 999. This works as a no install, offline, singleplayer version of the server. You will need to self host in order to load saves.
+1. In the repository, open **Settings → Pages → Build and deployment**, and select **GitHub Actions** as the source.
+2. Push these changes to `main`, or run **Validate and deploy GitHub Pages** in the Actions tab on `main`.
+3. The workflow installs from the lockfile, runs lint, type checking and tests, builds the site, validates the generated assets, then uploads and deploys the Pages artifact. Pull requests run the same validation without deploying.
+4. Once the deployment succeeds, open `https://awest813.github.io/LoreScape/`. Check a direct link such as `index.html?world=1&detail=low`, the tool links, and the manifest. Use the deployment job's URL if the repository name, owner, or domain changes.
 
-How to use:
-1. Run `npm run build` and then `npm run bundle` in the server, this copies all required files to `../Client2/public`. Start client with `npm run prod`.
-2. A save dialog will open on logout, you should save to `/public/data/players`.
-3. Optional: To host on github uncomment the lines starting with `!/public` in the [.gitignore](.gitignore).
+If you previously deployed from a `gh-pages` branch, selecting **GitHub Actions** replaces that deployment source. No PAT, custom deploy key, or manually committed build output is required. Repository or organization settings may require an environment approval for the `github-pages` environment.
 
-Combined with WebRTC connections you'll be able to host servers using just your browser by manually exchanging a message for each peer. Players that want to join will have to be on world 998 which won't start a web worker server.
+## Pages and controls
 
-Clicking `New user` on login screen or additionally `::peer` ingame for hosts will open a prompt and write either an offer (host) or answer (peer) to clipboard automatically. This message can contain your public IP. Pass the offer to the peer, peer returns the answer and you'll be connected! Closing the prompt will reset the process and allows for any amount of peers.
+| Page | Purpose |
+| --- | --- |
+| `index.html` | Game client with world and detail settings |
+| `playground.html` | Interactive model viewer |
+| `items.html` | Item list and search |
+| `sounds.html` | Sound viewer and playback |
+| `mesanim.html` | Chat message animation editor |
+| `mapview.html` | World map viewer |
+| `viewer.html` | Cache viewer; load your own cache files |
+| `interface-editor.html` | Interface editor (experimental) |
+| `JagEd.html` | Cache editor (experimental) |
+
+Click or Tab to the canvas to use the keyboard. In model/cache viewers, use arrow keys to rotate, W/S to zoom, R to reset, and `[` / `]` to adjust movement. Game commands include `::debug` for performance metrics, `::chat` for chat font eras, and `::fps 30` for a frame-rate target.
+
+## Connection troubleshooting
+
+- If loading fails, check your connection, use **Reload and retry**, or choose another world. World-list requests have a 10-second timeout and at most three attempts. File downloads time out after 30 seconds; archive requests also have bounded retries.
+- Live world services must support HTTPS and permit requests from the deployed site's origin. The website cannot override a server's CORS settings or host a WebSocket server on Pages.
+- Cache tools that download game files need the same services. Cache viewer and JagEd let you load cache files from your computer. Some tool data also comes from the upstream server repository on GitHub.
+- The manifest provides app metadata; it does not provide offline game data or a service worker. A normal deployment requires network access.
+- If a deployment fails, inspect the first failing Actions step. Asset checks detect missing files, invalid Bzip2 WebAssembly, and root-relative asset paths that would break project hosting.
+
+## Attribution
+
+Based on 2004Scape Client2 and its contributors. This is an independent community project, unaffiliated with Jagex. RuneScape is a trademark of Jagex Ltd. The original project identifies its client code as a TypeScript source port; retain upstream attribution and review rights for any game assets you distribute.

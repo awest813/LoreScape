@@ -1,15 +1,17 @@
 {
-  "name": "2004Scape",
+  "name": "LoreScape",
   "icons": [
     {
-      "src": "/manifest.png",
+      "src": "manifest.png",
       "type": "image/png",
       "sizes": "144x144"
     }
   ],
-  "id": "/",
+  "id": "./",
   "start_url": ".",
   "background_color": "#212121",
   "display": "minimal-ui",
-  "theme_color": "#212121"
+  "theme_color": "#212121",
+  "short_name": "LoreScape",
+  "scope": "./"
 }

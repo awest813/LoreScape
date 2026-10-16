@@ -5,7 +5,7 @@ describe('Isaac', (): void => {
         it('result after 1 million iterations', (): void => {
             const isaac: Isaac = new Isaac(Int32Array.from([0, 0, 0, 0]));
             for (let i: number = 0; i < 1_000_000; i++) {
-                isaac.nextInt;
+                void isaac.nextInt;
             }
 
             // checks that isaac is shuffling correctly
@@ -17,7 +17,7 @@ describe('Isaac', (): void => {
         it('result after 1 million iterations', (): void => {
             const isaac: Isaac = new Isaac(Int32Array.from([1, 2, 3, 4]));
             for (let i: number = 0; i < 1_000_000; i++) {
-                isaac.nextInt;
+                void isaac.nextInt;
             }
 
             // checks that rsl was populated and that isaac is shuffling correctly

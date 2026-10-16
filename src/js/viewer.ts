@@ -1,3 +1,5 @@
+import {startClient} from './page-shell';
+import {downloadUrl} from './jagex2/util/JsUtil';
 import 'style/viewer.scss';
 
 import Bzip from './vendor/bzip';
@@ -62,7 +64,7 @@ class Viewer extends Client {
 
         try {
             await Gzip();
-            await Bzip.load(await (await fetch('bz2.wasm')).arrayBuffer());
+            await Bzip.load(new Uint8Array(await downloadUrl('bz2.wasm')));
             this.db = new Database(await Database.openDatabase());
 
             this.drawArea?.bind();
@@ -298,4 +300,6 @@ class Viewer extends Client {
     }
 }
 
-new Viewer().run().then((): void => {});
+void startClient(async (): Promise<void> => {
+    await new Viewer().run();
+});

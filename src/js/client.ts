@@ -102,6 +102,8 @@ export abstract class Client extends GameShell {
     protected alreadyStarted: boolean = false;
     protected errorStarted: boolean = false;
     protected errorLoading: boolean = false;
+
+    protected hasLoadingError(): boolean { return this.errorLoading; }
     protected errorHost: boolean = false;
 
     // important client stuff
@@ -799,7 +801,8 @@ export abstract class Client extends GameShell {
     };
 
     protected loadArchive = async (filename: string, displayName: string, crc: number, progress: number): Promise<Jagfile> => {
-        let retry: number = 5;
+        let retry: number = 2;
+        let attempts: number = 0;
         let data: Int8Array | undefined = await this.db?.cacheload(filename);
         if (data && Packet.crc32(data) !== crc) {
             data = undefined;
@@ -819,6 +822,7 @@ export abstract class Client extends GameShell {
                     data = await downloadUrl(`${Client.httpAddress}/${filename}`);
                 }
             } catch (e) {
+                if (++attempts >= 3) throw e;
                 data = undefined;
                 for (let i: number = retry; i > 0; i--) {
                     await this.showProgress(progress, `Error loading - Will retry in ${i} secs.`);

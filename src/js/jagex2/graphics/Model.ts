@@ -188,15 +188,15 @@ export default class Model extends Hashable {
                     const flags: number = Model.point1.g1;
 
                     if ((flags & 0x1) !== 0) {
-                        Model.point2.gsmart;
+                        void Model.point2.gsmart;
                     }
 
                     if ((flags & 0x2) !== 0) {
-                        Model.point3.gsmart;
+                        void Model.point3.gsmart;
                     }
 
                     if ((flags & 0x4) !== 0) {
-                        Model.point4.gsmart;
+                        void Model.point4.gsmart;
                     }
                 }
 
@@ -204,11 +204,11 @@ export default class Model extends Hashable {
                     const type: number = Model.vertex2.g1;
 
                     if (type === 1) {
-                        Model.vertex1.gsmart;
-                        Model.vertex1.gsmart;
+                        void Model.vertex1.gsmart;
+                        void Model.vertex1.gsmart;
                     }
 
-                    Model.vertex1.gsmart;
+                    void Model.vertex1.gsmart;
                 }
 
                 meta.faceColorsOffset = triangleColorDataOffset;

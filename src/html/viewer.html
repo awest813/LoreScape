@@ -9,6 +9,7 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>2004Scape Tools - Cache Viewer</title>
+    <link rel="icon" href="favicon.ico">
 </head>
 
 <body>
@@ -33,7 +34,7 @@
                                 You will need to load a cache. It's as easy as dragging-and-dropping right here!<br>
                                 Remember, you can load a new cache by dragging-and-dropping again at any time.<br>
                                 <br>
-                                <img src="https://media.itspazaz.com/2024/02/msedge_HprzmakbmA.gif">
+                                <p>Select the cache files from your computer and drop them onto the canvas above.</p>
                             </div>
                             <a href="#" id="screenshot" style="float: right;" onclick="saveScreenshot();">Take screenshot</a><br><br>
                         </div>
@@ -63,6 +64,7 @@
             document.getElementById('screenshot').href = document.getElementById('canvas').toDataURL('image/png').replace(/^data:image\/[^;]/, 'data:application/octet-stream');
         }
     </script>
+<noscript><p>JavaScript is required to use LoreScape tools. Enable it and reload this page.</p></noscript>
 </body>
 
 </html>

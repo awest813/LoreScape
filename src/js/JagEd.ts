@@ -1,3 +1,5 @@
+import {startClient} from './page-shell';
+import {downloadUrl} from './jagex2/util/JsUtil';
 import 'style/JagEd.scss';
 
 import Bzip from './vendor/bzip';
@@ -65,7 +67,7 @@ class JagEd extends Client {
 
         try {
             await Gzip();
-            await Bzip.load(await (await fetch('bz2.wasm')).arrayBuffer());
+            await Bzip.load(new Uint8Array(await downloadUrl('bz2.wasm')));
             this.db = new Database(await Database.openDatabase());
 
             this.rightPanel = document.getElementById('rightPanel');
@@ -322,4 +324,6 @@ class JagEd extends Client {
     }
 }
 
-new JagEd().run().then((): void => {});
+void startClient(async (): Promise<void> => {
+    await new JagEd().run();
+});

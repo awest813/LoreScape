@@ -1,3 +1,4 @@
+import {setPageStatus, showStartupError} from '../../page-shell';
 import PixMap from '../graphics/PixMap';
 import Draw3D from '../graphics/Draw3D';
 
@@ -63,7 +64,7 @@ export default abstract class GameShell {
     private ny: number = 0;
 
     constructor(resizetoFit: boolean = false) {
-        canvas.tabIndex = -1;
+        if (canvas.style.display !== 'none') canvas.tabIndex = 0;
         canvas2d.fillStyle = 'black';
         canvas2d.fillRect(0, 0, canvas.width, canvas.height);
         this.resizeToFit = resizetoFit;
@@ -96,7 +97,7 @@ export default abstract class GameShell {
     };
 
     run = async (): Promise<void> => {
-        canvas.addEventListener(
+        window.addEventListener(
             'resize',
             (): void => {
                 if (this.resizeToFit) {
@@ -131,17 +132,23 @@ export default abstract class GameShell {
             e.preventDefault();
         };
 
-        window.oncontextmenu = (e: MouseEvent): void => {
-            e.preventDefault();
-        };
-
         // force set mobile on low detail mode to 30 fps as default.
         if (this.isMobile && GameShell.getParameter('detail') === 'low') {
             this.tfps = 30;
         }
 
         await this.showProgress(0, 'Loading...');
-        await this.load();
+        try {
+            await this.load();
+        } catch (error) {
+            showStartupError();
+            throw error;
+        }
+        if (this.hasLoadingError()) {
+            showStartupError();
+            return;
+        }
+        setPageStatus('Ready. Click or focus the canvas to use the client.');
 
         for (let i: number = 0; i < 10; i++) {
             this.otim[i] = performance.now();
@@ -277,7 +284,10 @@ export default abstract class GameShell {
 
     protected refresh = (): void => {};
 
+    protected hasLoadingError(): boolean { return false; }
+
     protected async showProgress(progress: number, message: string): Promise<void> {
+        setPageStatus(message);
         const width: number = this.width;
         const height: number = this.height;
 
@@ -481,6 +491,7 @@ export default abstract class GameShell {
     };
 
     private onmousedown = (e: MouseEvent): void => {
+        canvas.focus({preventScroll: true});
         this.touching = false;
         //Don't 'reset' position (This fixes right click in Android)
         if (e.clientX > 0 || e.clientY > 0) this.setMousePosition(e);

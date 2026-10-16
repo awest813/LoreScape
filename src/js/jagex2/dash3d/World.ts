@@ -798,12 +798,12 @@ export default class World {
                             }
 
                             if (opcode === 1) {
-                                buf.g1;
+                                void buf.g1;
                                 break;
                             }
 
                             if (opcode <= 49) {
-                                buf.g1;
+                                void buf.g1;
                             }
                         }
                     }

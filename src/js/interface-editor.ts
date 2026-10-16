@@ -1,3 +1,4 @@
+import {startClient} from './page-shell';
 import 'style/interface-editor.scss';
 
 import SeqType from './jagex2/config/SeqType';
@@ -48,7 +49,7 @@ class InterfaceEditor extends Client {
         try {
             await this.showProgress(10, 'Connecting to fileserver');
 
-            await Bzip.load(await (await fetch('bz2.wasm')).arrayBuffer());
+            await Bzip.load(new Uint8Array(await downloadUrl('bz2.wasm')));
             this.db = new Database(await Database.openDatabase());
 
             const checksums: Packet = new Packet(new Uint8Array(await downloadUrl(`${Client.httpAddress}/crc`)));
@@ -318,5 +319,7 @@ class InterfaceEditor extends Client {
     };
 }
 
-await setupConfiguration();
-new InterfaceEditor().run().then((): void => {});
+void startClient(async (): Promise<void> => {
+    await setupConfiguration();
+    await new InterfaceEditor().run();
+});

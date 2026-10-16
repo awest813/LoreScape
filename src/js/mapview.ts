@@ -1,3 +1,4 @@
+import {startClient} from './page-shell';
 // noinspection JSSuspiciousNameCombination,DuplicatedCode
 
 import 'style/items.scss';
@@ -167,7 +168,7 @@ class MapView extends GameShell {
     offsetZ: number = this.originZ + this.sizeZ - this.startZ;
 
     load = async (): Promise<void> => {
-        await Bzip.load(await (await fetch('bz2.wasm')).arrayBuffer());
+        await Bzip.load(new Uint8Array(await downloadUrl('bz2.wasm')));
         this.db = new Database(await Database.openDatabase());
 
         const worldmap: Jagfile = await this.loadWorldmap();
@@ -563,7 +564,8 @@ class MapView extends GameShell {
             return new Jagfile(data);
         }
 
-        let retry: number = 5;
+        let retry: number = 2;
+        let attempts: number = 0;
         while (!data) {
             await this.showProgress(0, 'Requesting map');
 
@@ -571,6 +573,7 @@ class MapView extends GameShell {
                 console.log(`${Client.httpAddress}/worldmap.jag`);
                 data = await downloadUrl(`${Client.httpAddress}/worldmap.jag`);
             } catch (e) {
+                if (++attempts >= 3) throw e;
                 data = undefined;
                 for (let i: number = retry; i > 0; i--) {
                     await this.showProgress(0, `Error loading - Will retry in ${i} secs.`);
@@ -699,7 +702,7 @@ class MapView extends GameShell {
                 for (let i: number = -4096; i < 0; i++) {
                     const opcode: number = data.g1;
                     if (opcode != 0) {
-                        data.g1;
+                        void data.g1;
                     }
                 }
             }
@@ -1514,8 +1517,10 @@ class MapView extends GameShell {
     }
 }
 
-await setupConfiguration();
-new MapView().run().then((): void => {});
+void startClient(async (): Promise<void> => {
+    await setupConfiguration();
+    await new MapView().run();
+});
 
 // prevent space from scrolling page
 window.onkeydown = function (e): boolean {
