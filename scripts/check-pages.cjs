@@ -8,7 +8,7 @@ for (const page of pages) {
     const html = fs.readFileSync(path.join(root, `${page}.html`), 'utf8');
     assert.match(html, /<!doctype html>/i, `${page} needs standards mode`);
     assert.match(html, /lang="en"/, `${page} needs a document language`);
-    const assets = [...html.matchAll(/<(?:script|link)\b[^>]*(?:src|href)="([^"]+)"/g)].map(match => match[1]);
+    const assets = [...html.matchAll(/<(?:script|link|img)\b[^>]*(?:src|href)="([^"]+)"/g)].map(match => match[1]);
     assert(assets.some(asset => asset.endsWith('.js')), `${page} has no scripts`);
     for (const asset of assets) {
         assert(!asset.startsWith('/'), `${page}: root-relative asset breaks project Pages: ${asset}`);

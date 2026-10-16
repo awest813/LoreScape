@@ -2,33 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>LoreScape — Play & Explore</title>
-    <meta name="description" content="Play the classic 2004Scape browser client and explore models, items, sounds, maps, and cache tools with LoreScape.">
+    <title>LoreScape — Your adventure awaits</title>
+    <meta name="description" content="Return to a classic world. Choose a 2004Scape world, launch the browser client, and explore LoreScape's creative tools.">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#151b19">
+    <meta name="theme-color" content="#101b18">
     <link rel="icon" href="favicon.ico">
 </head>
-<body class="lore-game">
+<body class="launcher">
+    <a class="launcher-skip" href="#launch-panel">Skip to launcher</a>
+    <header class="launcher-header">
+        <a class="launcher-logo" href="index.html" aria-label="LoreScape home"><svg viewBox="0 0 40 48" fill="none" aria-hidden="true"><path d="M20 2 37 12v23L20 46 3 35V12Z" stroke="currentColor"/><path d="M20 8 31 15v17L20 39 9 32V15Z" stroke="currentColor" opacity=".4"/><path d="M16 16v16h11v-4h-7V16Z" fill="currentColor"/></svg><span>LoreScape<small>A classic, rediscovered.</small></span></a>
+        <nav aria-label="Launcher navigation"><a href="#launch-panel" aria-current="page">Play</a><a href="#toolkit">Explore tools</a><a href="#guide">Getting started</a></nav>
+        <a class="launcher-github" href="https://github.com/awest813/LoreScape">GitHub <span aria-hidden="true"><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></a>
+    </header>
     <main>
-        <section class="lore-intro" aria-labelledby="welcome">
-            <h1 id="welcome">Your next adventure starts here.</h1>
-            <p>A classic world, ready to explore. Choose your world and detail level, or discover the tools above.</p>
-            <form class="lore-settings" method="get">
-                <label for="world">World <input id="world" name="world" type="number" min="0" max="999" value="1" required></label>
-                <label for="detail">Graphics <select id="detail" name="detail"><option value="high">High detail</option><option value="low">Low detail</option></select></label>
-                <input type="hidden" name="method" value="0">
-                <button type="submit">Connect to world</button>
-            </form>
+        <div class="launcher-layout">
+            <section class="launcher-hero" aria-labelledby="hero-title">
+                <p class="launcher-eyebrow"><span></span> THE 2004SCAPE BROWSER CLIENT</p>
+                <h1 id="hero-title">A familiar world.<br>A new <em>adventure.</em></h1>
+                <p class="launcher-lede">The winding paths. The first quest. The friends along the way. Step back into a world that still has stories to tell.</p>
+                <div class="launcher-features"><span>Play in your browser</span><i aria-hidden="true">✦</i><span>No install needed</span><i aria-hidden="true">✦</i><span>Open source</span></div>
+                <figure class="launcher-landscape"><img src="launcher-landscape.svg" width="960" height="500" alt="" fetchpriority="high"><figcaption><span>THE PATH IS YOURS TO CHOOSE</span><span aria-hidden="true">01 — A WORLD AWAITS</span></figcaption></figure>
+            </section>
+            <section class="launch-panel" id="launch-panel" aria-labelledby="launch-title" tabindex="-1">
+                <div class="launch-panel-heading"><span class="launcher-eyebrow">BEGIN YOUR JOURNEY</span><span class="launch-edition">CLASSIC / 225</span></div>
+                <h2 id="launch-title">Make yourself at home.</h2>
+                <p class="launch-description">Pick a world. We'll meet you there.</p>
+                <form id="launcher-form">
+                    <div class="launch-section-label"><h3><span>01</span> Choose a world</h3><button id="refresh-worlds" type="button" aria-label="Refresh world list">Refresh <span aria-hidden="true">↻</span></button></div>
+                    <div class="world-filter"><label for="world-filter">Show</label><select id="world-filter"><option value="all">All worlds</option><option value="free">Free worlds</option><option value="members">Members worlds</option></select><span id="world-count" role="status">Fetching worlds…</span></div>
+                    <p id="world-notice" class="world-notice" role="status" hidden></p>
+                    <div id="world-list" class="world-list" role="group" aria-label="Available worlds" aria-busy="true"><p class="world-placeholder">Looking for your next destination…</p></div>
+                    <details class="world-manual" id="world-manual"><summary>Connect by world ID</summary><label for="world">World ID<input id="world" name="world" type="number" min="0" max="999" step="1" required value="1"></label><p>World 0 needs a local server. Worlds 998/999 need separate peer or worker bundles.</p></details>
+                    <fieldset class="graphics-settings"><legend><span>02</span> Set the atmosphere</legend><div class="graphics-options">
+                        <label><input type="radio" name="detail" value="high" checked><span><strong>High detail</strong><small>The full classic look</small></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></label>
+                        <label><input type="radio" name="detail" value="low"><span><strong>Low detail</strong><small>Lighter on your device</small></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></label>
+                    </div></fieldset>
+                    <button class="launch-button" id="launch-button" type="submit"><span>Enter world <span id="selected-world">1</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
+                    <p class="launch-account">A 2004Scape account is required. <a href="https://2004scape.org">Account info <span aria-hidden="true"><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></a></p>
+                    <div id="launch-status"></div>
+                    <div class="launch-saved"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3h10v11H3Zm2 0v4h6V3M6 10h4v4"/></svg>Your world & graphics are remembered on this device.</div>
+                </form>
+            </section>
+        </div>
+        <section class="client-stage" id="client-stage" hidden aria-labelledby="client-heading">
+            <div class="client-toolbar"><div><p class="launcher-eyebrow">YOUR ADVENTURE</p><h1 id="client-heading">World 1</h1><span id="client-detail"></span></div><div class="client-actions"><a href="index.html">Back to launcher</a><button id="fullscreen-client" type="button" hidden>Fullscreen</button></div></div>
+            <div id="client-status"></div>
+            <div class="client-screen"><canvas id="canvas" width="789" height="532" tabindex="0" aria-label="Game client. Focus here to use the keyboard.">Your browser must support Canvas to run the client.</canvas></div>
+            <p class="client-hint">Click the game to focus it. Use your mouse to interact and your keyboard to chat.</p>
         </section>
-        <canvas id="canvas" width="789" height="532" tabindex="0" aria-label="Game client. Click or focus here to use the keyboard.">Your browser must support Canvas to run the client.</canvas>
-        <details class="lore-help">
-            <summary>New here? Controls & connection help</summary>
-            <p>Use a current version of Chrome, Firefox, Edge, or Safari. A desktop with a keyboard and mouse gives the best experience. Click the game to focus it, use the mouse to interact, and type to chat. Low detail can help on slower devices.</p>
-            <p>The client connects to the 2004Scape world service and downloads game files. You need an account for the selected server; see <a href="https://2004scape.org">2004Scape</a> for account information and live worlds. GitHub Pages hosts the client; it does not host the game server. A world may be unavailable or require membership.</p>
-            <p>World 0 is for a local development server. Worlds 998 and 999 require a separately bundled peer or worker server and game data. They are not included in this website.</p>
-        </details>
+        <section class="launcher-toolkit" id="toolkit" aria-labelledby="toolkit-title"><div class="toolkit-heading"><div><p class="launcher-eyebrow">FOR THE CURIOUS & THE CREATORS</p><h2 id="toolkit-title">There's more to explore.</h2></div><p>A closer look at the world behind the adventure.</p></div>
+            <div class="toolkit-grid">
+                <a href="playground.html"><span class="tool-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m16 2 13 8v14l-13 7-13-7V10Zm0 14L3 10m13 6 13-6M16 16v15"/></svg></span><h3>Model studio <span><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></h3><p>Inspect the shapes that bring the world to life.</p><small>VIEW & EXPLORE</small></a>
+                <a href="items.html"><span class="tool-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m8 24 15-15 5-5-1 8-15 15m-4-7 7 7M5 24l3 3-4 4-3-3Z"/></svg></span><h3>Item index <span><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></h3><p>From your first bronze sword to the rarest find.</p><small>BROWSE & SEARCH</small></a>
+                <a href="mapview.html"><span class="tool-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m2 8 9-5 10 5 9-5v21l-9 5-10-5-9 5Zm9-5v21M21 8v21M6 17l2-2m6-1 4 2m6-2 3-2"/></svg></span><h3>World atlas <span><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></h3><p>Find a familiar place. Plan an unfamiliar path.</p><small>DISCOVER THE MAP</small></a>
+                <a href="viewer.html"><span class="tool-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M3 3h26v8H3Zm0 10h26v8H3Zm0 10h26v8H3ZM7 7h2m-2 10h2m-2 10h2"/></svg></span><h3>Cache workbench <span><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></h3><p>Bring your own cache files and look inside.</p><small>INSPECT & DISCOVER</small></a>
+            </div>
+            <div class="toolkit-more"><span>Keep creating</span><a href="sounds.html">Sounds</a><a href="mesanim.html">Chat animations</a><a href="interface-editor.html">Interface editor <small>Experimental</small></a><a href="JagEd.html">JagEd <small>Experimental</small></a></div>
+        </section>
+        <section class="launcher-guide" id="guide" aria-labelledby="guide-title"><div><p class="launcher-eyebrow">BEFORE YOU SET OUT</p><h2 id="guide-title">A little guidance <br>goes a long way.</h2><p>Best enjoyed with a keyboard, a mouse,<br>and a little time to get lost.</p></div><div class="guide-questions">
+            <details><summary>What do I need to play?</summary><p>A current Chrome, Firefox, Edge, or Safari browser and an account on the selected 2004Scape server. Visit <a href="https://2004scape.org">2004Scape</a> for account information. Some worlds require membership.</p></details>
+            <details><summary>Which graphics setting should I choose?</summary><p>High detail gives you the full classic presentation. Low detail reduces the load on your device. You can change this before each launch; your choice is remembered here.</p></details>
+            <details><summary>My world isn't loading. What now?</summary><p>Retry the connection or return to the launcher and choose another world. The world service and game files need to be available. This website hosts the browser client; game servers are separate services. A normal build needs an internet connection.</p></details>
+            <details><summary>Can I use the tools without playing?</summary><p>Yes. Open a tool directly from the toolkit above. Most tools download data from the game services. The cache viewer and JagEd let you bring cache files from your computer.</p></details>
+        </div></section>
     </main>
-    <footer class="lore-footer">Built on the <a href="https://github.com/2004scape/Client2">2004Scape TypeScript client</a>. An independent community project, unaffiliated with Jagex. RuneScape is a trademark of Jagex Ltd.</footer>
-    <noscript><p class="lore-status">JavaScript is required to run LoreScape. Enable it in your browser and reload this page.</p></noscript>
+    <footer class="launcher-footer"><a class="footer-wordmark" href="index.html">LoreScape</a><p>An independent community project built on <a href="https://github.com/2004scape/Client2">2004Scape</a>.<br>Unaffiliated with Jagex. RuneScape is a trademark of Jagex Ltd.</p><a href="https://github.com/awest813/LoreScape">Made to be explored. Built in the open. <svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></a></footer>
+    <noscript><p class="launcher-noscript">Enable JavaScript to choose a world and launch the client. You can still read the guide and follow the tool links above.</p></noscript>
 </body>
 </html>

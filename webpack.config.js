@@ -21,7 +21,7 @@ const htmlPlugins = pages.map(name => {
 const config = {
     cache: {type: 'filesystem'},
     entry: {
-        index: './src/js/game.ts',
+        index: './src/js/launcher.ts',
         playground: './src/js/playground.ts',
         viewer: './src/js/viewer.ts',
         mesanim: './src/js/mesanim.ts',
@@ -104,7 +104,17 @@ module.exports = () => ({
     optimization: {
         // Keep public browser and WebAssembly property names intact.
         minimizer: [new TerserPlugin({parallel: 2})],
-        splitChunks: {chunks: 'all'},
+        splitChunks: {
+            chunks: 'all',
+            cacheGroups: {
+                shell: {
+                    test: /[\/]src[\/]js[\/](?:page-shell|manifest|jagex2[\/]util[\/]JsUtil)\.ts$/,
+                    name: 'site-shell',
+                    enforce: true,
+                    priority: 20
+                }
+            }
+        },
         runtimeChunk: 'single'
     },
     devtool: isProduction ? false : 'source-map'

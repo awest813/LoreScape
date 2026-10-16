@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '../public');
 const port = Number(process.env.PORT || 4173);
 const base = process.env.BASE_PATH || '/';
 if (!base.startsWith('/') || !base.endsWith('/')) throw new Error('BASE_PATH must begin and end with /.');
-const types = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.wasm': 'application/wasm', '.png': 'image/png', '.ico': 'image/x-icon', '.sf2': 'application/octet-stream'};
+const types = {'.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.wasm': 'application/wasm', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.sf2': 'application/octet-stream'};
 http.createServer((request, response) => {
     if (!['GET', 'HEAD'].includes(request.method)) { response.writeHead(405).end(); return; }
     let pathname;

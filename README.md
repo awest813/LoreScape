@@ -2,7 +2,7 @@
 
 A browser client and collection of cache tools based on the [2004Scape TypeScript client](https://github.com/2004scape/Client2), a source port of the 2004 client refactor.
 
-The home page provides world and graphics controls, keyboard-accessible navigation, loading progress, and recovery messages. Game files and live worlds come from the 2004Scape services. **GitHub Pages hosts only the website; it does not run a game server.** Availability, account requirements, membership, and cross-origin access are controlled by the selected server.
+The launcher provides a live world directory with free/member filters, remembered world and graphics choices, a toolkit, and connection guidance. The game client loads only when you select **Enter world**. Existing `?world=…&detail=…` links still launch directly. A separate client view provides fullscreen, loading progress, recovery messages, and a route back to the launcher. Game files and live worlds come from the 2004Scape services. **GitHub Pages hosts only the website; it does not run a game server.** Availability, account requirements, membership, and cross-origin access are controlled by the selected server.
 
 ## Develop locally
 
@@ -13,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:8080/`. The client defaults to live world 1. Choose a world in the form or use `?world=1&detail=low&method=0`. Low detail is useful on slower devices. Desktop keyboard and mouse are recommended; the canvas scales to smaller screens.
+Open `http://localhost:8080/`. The launcher starts with live world 1 selected. Choose a world and select **Enter world**, or launch directly with `?world=1&detail=low&method=0`. Low detail is useful on slower devices. Desktop keyboard and mouse are recommended; the canvas scales to smaller screens.
 
 World 0 connects to a separately running local server at `http://localhost`. Use the local HTTP development site for world 0. HTTPS-hosted Pages cannot use this configuration. Worlds 998 and 999 require separate peer/worker server bundles and game data; they are not included in a normal build.
 
@@ -52,7 +52,7 @@ If you previously deployed from a `gh-pages` branch, selecting **GitHub Actions*
 
 | Page | Purpose |
 | --- | --- |
-| `index.html` | Game client with world and detail settings |
+| `index.html` | Launcher and on-demand game client |
 | `playground.html` | Interactive model viewer |
 | `items.html` | Item list and search |
 | `sounds.html` | Sound viewer and playback |

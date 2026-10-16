@@ -37,6 +37,7 @@ export function setPageStatus(message: string, failed: boolean = false): void {
     const text: HTMLElement | null = document.getElementById('lore-status-message');
     if (text) text.textContent = message;
     status.classList.toggle('lore-status-error', failed);
+    window.dispatchEvent(new CustomEvent('lore:status', {detail: {message, failed}}));
     const retry: HTMLElement | null = document.getElementById('lore-retry');
     if (retry) retry.hidden = !failed;
 }
