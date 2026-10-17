@@ -35,3 +35,21 @@ export function worldAddresses(address: string, portOffset: number, securePage: 
     const sockets: string[] = websocketAddress ? [validateSocketUrl(websocketAddress, securePage)] : [...new Set([shared.href, legacy])];
     return {files: url.origin, host, sockets};
 }
+
+export const DEFAULT_LOCAL_ADDRESS: string = 'http://localhost:8888';
+
+export function localWorldAddresses(address: string, securePage: boolean): {files: string; host: string; sockets: string[]} {
+    let url: URL;
+    try {
+        url = new URL(address);
+    } catch {
+        throw new Error('Enter a complete local server URL, for example http://localhost:8888.');
+    }
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
+        throw new Error('Use the server HTTP or HTTPS origin with its port, without a path, password, or query.');
+    }
+    if (securePage && url.protocol !== 'https:') {
+        throw new Error('This HTTPS launcher requires an HTTPS/WSS server. For an HTTP local server, run npm run dev and open http://localhost:8080/.');
+    }
+    return worldAddresses(url.origin, 0, securePage);
+}

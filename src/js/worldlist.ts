@@ -21,7 +21,7 @@ export async function getWorldInfo(secured: boolean, id: number): Promise<WorldI
             if (!Array.isArray(worldlist)) throw new Error('Invalid world list response.');
             break;
         } catch (error) {
-            if (attempt === 2) throw new Error('The world service is unavailable. Please try again later.');
+            if (attempt === 2) throw new Error(`The world service is unavailable at ${endpoint}. ${error instanceof Error ? error.message : ''} Check your network and browser restrictions, or try the official 2004Scape site.`);
             await sleep(1000);
         }
     }

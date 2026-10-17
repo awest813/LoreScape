@@ -1,24 +1,17 @@
-import LinkList from '../datastruct/LinkList';
-import Linkable from '../datastruct/Linkable';
-import {sleep} from '../util/JsUtil';
+type WorkerMessage = {type: string; data?: Uint8Array | number[]; id?: string};
 
 export default class ClientWorkerStream {
-    // constructor
-    private readonly worker: Worker;
-    public wwin: WorkerReader;
-    private readonly wwout: WorkerWriter;
-
-    // runtime
+    public readonly wwin: WorkerReader;
     private closed: boolean = false;
-    private ioerror: boolean = false;
 
-    constructor(worker: Worker, uniqueId: string) {
-        this.worker = worker;
-        this.worker.onerror = this.onerror;
-        this.worker.onmessageerror = this.onmessageerror;
+    constructor(
+        private readonly worker: Worker,
+        private readonly uniqueId: string
+    ) {
         this.wwin = new WorkerReader(5000);
-        this.wwout = new WorkerWriter(this.worker, 5000, uniqueId);
-        this.worker.postMessage({type: 'connection', id: uniqueId});
+        worker.onerror = (): void => this.close();
+        worker.onmessageerror = (): void => this.close();
+        worker.postMessage({type: 'connection', id: uniqueId});
     }
 
     get available(): number {
@@ -26,241 +19,113 @@ export default class ClientWorkerStream {
     }
 
     write(src: Uint8Array, len: number): void {
-        this.wwout.write(src, len);
+        if (this.closed) throw new Error('Local server connection is closed.');
+        if (!Number.isInteger(len) || len < 0 || len > src.length || len > 5000) throw new Error('Invalid worker write buffer.');
+        this.worker.postMessage({type: 'data', data: src.slice(0, len), id: this.uniqueId});
     }
 
-    async read(): Promise<number> {
-        return this.closed ? 0 : this.wwin.fastByte() ?? (await this.wwin.slowByte());
+    private async withDeadline<T>(operation: () => Promise<T>, timeoutMs: number): Promise<T> {
+        if (timeoutMs <= 0) return operation();
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        try {
+            return await Promise.race([
+                operation(),
+                new Promise<never>((_resolve, reject): void => {
+                    timer = setTimeout((): void => {
+                        reject(new Error('Timed out waiting for the local server. Check the worker or peer connection.'));
+                        this.close();
+                    }, timeoutMs);
+                })
+            ]);
+        } finally {
+            if (timer !== undefined) clearTimeout(timer);
+        }
     }
 
-    async readBytes(dst: Uint8Array, off: number, len: number): Promise<void> {
-        if (this.closed) {
-            return;
-        }
-        while (len > 0) {
-            const read: Uint8Array = this.wwin.fastBytes(dst, off, len) ?? (await this.wwin.slowBytes(dst, off, len));
-            if (read.length <= 0) {
-                throw new Error('EOF');
-            }
-            off += read.length;
-            len -= read.length;
-        }
+    async read(timeoutMs: number = 0): Promise<number> {
+        return this.withDeadline((): Promise<number> => this.wwin.read(), timeoutMs);
+    }
+
+    async readBytes(dst: Uint8Array, off: number, len: number, timeoutMs: number = 0): Promise<void> {
+        if (!Number.isInteger(off) || !Number.isInteger(len) || off < 0 || len < 0 || off + len > dst.length) throw new Error('Invalid read buffer range.');
+        await this.withDeadline(async (): Promise<void> => {
+            for (let index: number = 0; index < len; index++) dst[off + index] = await this.wwin.read();
+        }, timeoutMs);
     }
 
     close(): void {
+        if (this.closed) return;
         this.closed = true;
         this.wwin.close();
-        this.wwout.close();
-        console.log('connection close!');
-        if (this.ioerror) {
-            console.log('connection error!');
-        }
-    }
-
-    private onerror = (event: Event): void => {
-        if (this.closed) {
-            return;
-        }
-        this.ioerror = true;
-        this.close();
-    };
-
-    private onmessageerror = (event: MessageEvent): void => {
-        if (this.closed) {
-            return;
-        }
-        this.ioerror = true;
-        this.close();
-    };
-}
-
-class WorkerWriter {
-    // constructor
-    private readonly worker: Worker;
-    private readonly limit: number;
-    private readonly uniqueId: string;
-
-    private closed: boolean = false;
-    private ioerror: boolean = false;
-
-    constructor(socket: Worker, limit: number, uniqueId: string) {
-        this.worker = socket;
-        this.limit = limit;
-        this.uniqueId = uniqueId;
-    }
-
-    write(src: Uint8Array, len: number): void {
-        if (this.closed) {
-            return;
-        }
-        if (this.ioerror) {
-            this.ioerror = false;
-            throw new Error('Error in writer thread');
-        }
-        if (len > this.limit || src.length > this.limit) {
-            throw new Error('buffer overflow');
-        }
         try {
-            this.worker.postMessage({type: 'data', data: src.subarray(0, len), id: this.uniqueId});
-        } catch (e) {
-            this.ioerror = true;
+            this.worker.postMessage({type: 'close', id: this.uniqueId});
+        } catch {
+            /* The worker or peer may already be disconnected. */
         }
-    }
-
-    close(): void {
-        this.closed = true;
-    }
-}
-
-class WorkerEvent extends Linkable {
-    private readonly bytes: Uint8Array;
-    private position: number;
-
-    constructor(bytes: Uint8Array) {
-        super();
-        this.bytes = bytes;
-        this.position = 0;
-    }
-
-    get available(): number {
-        return this.bytes.length - this.position;
-    }
-
-    get read(): number {
-        return this.bytes[this.position++];
-    }
-
-    get len(): number {
-        return this.bytes.length;
     }
 }
 
 class WorkerReader {
-    // constructor
-    private readonly limit: number;
-
-    // runtime
-    private queue: LinkList = new LinkList();
-    private event: WorkerEvent | null = null;
-    private callback: ((data: WorkerEvent | null) => void) | null = null;
+    private chunks: Uint8Array[] = [];
+    private position: number = 0;
     private total: number = 0;
     private closed: boolean = false;
+    private wake: (() => void) | undefined;
 
-    constructor(limit: number) {
-        this.limit = limit;
-    }
+    constructor(private readonly limit: number) {}
 
     get available(): number {
         return this.total;
     }
 
-    public onmessage = (e: MessageEvent): void => {
-        const msg: {type: string; data: Uint8Array | Array<number>; id: string} = typeof e.data === 'string' ? JSON.parse(e.data) : e;
-        if (msg.type !== 'data') {
-            console.error('Unexpected message type: ', msg.type);
+    public onmessage = (event: MessageEvent | WorkerMessage): void => {
+        if (this.closed) return;
+        // Browser workers deliver MessageEvents; the host also forwards raw messages.
+        const payload: unknown = 'type' in event && ['data', 'close'].includes(event.type) ? event : event.data;
+        const message: WorkerMessage = typeof payload === 'string' ? JSON.parse(payload) : (payload as WorkerMessage);
+        if (message?.type === 'close') {
+            this.close();
             return;
         }
-
-        if (this.closed) {
-            throw new Error('WorkerReader is closed!');
-        }
-        const event: WorkerEvent = new WorkerEvent(new Uint8Array(msg.data));
-        if (this.event) {
-            this.queue.addTail(event);
-        } else {
-            this.event = event;
-        }
-        this.total += event.len;
-        if (!this.callback) {
+        if (message?.type !== 'data' || !message.data) return;
+        const bytes: Uint8Array = new Uint8Array(message.data);
+        if (this.total + bytes.length > this.limit) {
+            this.close();
             return;
         }
-        this.callback(this.event);
-        this.callback = null;
-        // check for the overflow after the callback
-        if (this.total > this.limit) {
-            throw new Error('buffer overflow');
+        if (bytes.length) {
+            this.chunks.push(bytes);
+            this.total += bytes.length;
         }
+        this.wake?.();
+        this.wake = undefined;
     };
 
-    private readFastByte(): number | null {
-        if (this.event && this.event.available > 0) {
-            return this.event.read;
-        }
-        return null;
-    }
-
-    private async readSlowByte(len: number): Promise<number> {
-        this.event = this.queue.removeHead() as WorkerEvent | null;
-        while (this.total < len) {
-            await Promise.race([
-                new Promise((resolve): ((value: PromiseLike<((data: WorkerEvent | null) => void) | null>) => void) => (this.callback = resolve)),
-                sleep(2000).then((): void => {
-                    if (this.closed) {
-                        throw new Error('WorkerReader closed while reading.');
-                    }
-                })
-            ]);
-        }
-        return this.event ? this.event.read : this.readSlowByte(len);
-    }
-
-    fastBytes(dst: Uint8Array, off: number, len: number): Uint8Array | null {
-        if (this.closed) {
-            throw new Error('WorkerReader is closed!');
-        }
-        if (!(this.event && this.event.available >= len)) {
-            return null;
-        }
-        while (len > 0) {
-            const fast: number | null = this.readFastByte();
-            if (fast === null) {
-                throw new Error('EOF - tried to read a fast byte when there was not enough immediate bytes.');
+    async read(): Promise<number> {
+        while (!this.closed) {
+            const chunk: Uint8Array | undefined = this.chunks[0];
+            if (chunk) {
+                const byte: number = chunk[this.position++];
+                this.total--;
+                if (this.position === chunk.length) {
+                    this.chunks.shift();
+                    this.position = 0;
+                }
+                return byte;
             }
-            dst[off++] = fast;
-            this.total--;
-            len--;
+            await new Promise<void>((resolve): void => {
+                this.wake = resolve;
+            });
         }
-        return dst;
-    }
-
-    async slowBytes(dst: Uint8Array, off: number, len: number): Promise<Uint8Array> {
-        if (this.closed) {
-            throw new Error('WorkerReader is closed!');
-        }
-        while (len > 0) {
-            dst[off++] = this.readFastByte() ?? (await this.readSlowByte(len));
-            this.total--;
-            len--;
-        }
-        return dst;
-    }
-
-    fastByte(): number | null {
-        if (this.closed) {
-            throw new Error('WorkerReader is closed!');
-        }
-        const fast: number | null = this.readFastByte();
-        if (fast === null) {
-            return null;
-        }
-        this.total--;
-        return fast;
-    }
-
-    async slowByte(): Promise<number> {
-        if (this.closed) {
-            throw new Error('WorkerReader is closed!');
-        }
-        const slow: number = await this.readSlowByte(1);
-        this.total--;
-        return slow;
+        throw new Error('Local server connection closed while reading.');
     }
 
     close(): void {
         this.closed = true;
-        this.callback = null;
+        this.chunks = [];
+        this.position = 0;
         this.total = 0;
-        this.event = null;
-        this.queue.clear();
+        this.wake?.();
+        this.wake = undefined;
     }
 }

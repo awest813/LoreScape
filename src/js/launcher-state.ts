@@ -1,6 +1,7 @@
+import {localWorldAddresses} from './connection';
 import type {WorldInfo} from './worldlist';
 
-export type LauncherPreferences = {world: number; detail: 'high' | 'low'};
+export type LauncherPreferences = {world: number; detail: 'high' | 'low'; localAddress?: string};
 export const defaultPreferences: LauncherPreferences = {world: 1, detail: 'high'};
 
 export function validWorld(value: unknown): value is number {
@@ -12,7 +13,15 @@ export function parsePreferences(saved: string | null): LauncherPreferences {
         const value: unknown = JSON.parse(saved || 'null');
         if (!value || typeof value !== 'object') return {...defaultPreferences};
         const record: Record<string, unknown> = value as Record<string, unknown>;
-        return {world: validWorld(record.world) ? record.world : 1, detail: record.detail === 'low' ? 'low' : 'high'};
+        const preferences: LauncherPreferences = {world: validWorld(record.world) ? record.world : 1, detail: record.detail === 'low' ? 'low' : 'high'};
+        if (typeof record.localAddress === 'string') {
+            try {
+                preferences.localAddress = localWorldAddresses(record.localAddress, false).files;
+            } catch {
+                /* Ignore invalid saved addresses. */
+            }
+        }
+        return preferences;
     } catch {
         return {...defaultPreferences};
     }

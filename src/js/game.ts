@@ -1,4 +1,5 @@
 import {setPageStatus} from './page-shell';
+import {loadClientChecksums} from './local-worlds';
 import {startClient} from './page-shell';
 import SeqType from './jagex2/config/SeqType';
 import LocType from './jagex2/config/LocType';
@@ -85,9 +86,13 @@ class Game extends Client {
             await this.showProgress(10, 'Connecting to fileserver');
 
             await Bzip.load(new Uint8Array(await downloadUrl('bz2.wasm')));
-            this.db = new Database(await Database.openDatabase());
+            try {
+                this.db = new Database(await Database.openDatabase());
+            } catch {
+                console.warn('Browser cache unavailable; game files will be downloaded for this session.');
+            }
 
-            const checksums: Packet = new Packet(new Uint8Array(await downloadUrl(`${Client.httpAddress}/crc`)));
+            const checksums: Packet = new Packet(new Uint8Array(await loadClientChecksums(Client.httpAddress, Number(Game.getParameter('world')))));
             for (let i: number = 0; i < 9; i++) {
                 this.archiveChecksums[i] = checksums.g4;
             }
@@ -331,6 +336,7 @@ class Game extends Client {
         } catch (err) {
             console.error(err);
             this.errorLoading = true;
+            throw err;
         }
     };
 
@@ -849,9 +855,10 @@ class Game extends Client {
                 await this.drawTitleScreen();
             }
             if (Game.getParameter('world') === '998') {
-                if (this.peer && !this.peer.dc) {
+                if (!this.peer?.uniqueId || this.peer.dc?.readyState !== 'open') {
                     this.loginMessage0 = 'You are not connected to a host.';
-                    this.loginMessage1 = 'Please try using world 999.';
+                    this.loginMessage1 = 'Select New user to join a host.';
+                    setPageStatus('Join a browser host using New user before logging in.', true);
                     return;
                 }
                 this.stream = new ClientWorkerStream(this.worker!, this.peer!.uniqueId!);
@@ -871,11 +878,7 @@ class Game extends Client {
                     })
                 );
             }
-            if (this.stream instanceof ClientStream) {
-                await this.stream.readBytes(this.in.data, 0, 8, 10000);
-            } else {
-                await this.stream.readBytes(this.in.data, 0, 8);
-            }
+            await this.stream.readBytes(this.in.data, 0, 8, 10000);
             this.in.pos = 0;
             this.serverSeed = this.in.g8;
             const seed: Int32Array = new Int32Array([Math.floor(Math.random() * 99999999), Math.floor(Math.random() * 99999999), Number(this.serverSeed >> 32n), Number(this.serverSeed & BigInt(0xffffffff))]);
@@ -908,7 +911,7 @@ class Game extends Client {
             }
             this.randomIn = new Isaac(seed);
             this.stream?.write(this.loginout.data, this.loginout.pos);
-            const reply: number = this.stream instanceof ClientStream ? await this.stream.read(10000) : await this.stream.read();
+            const reply: number = await this.stream.read(10000);
             if (reply === 2 || reply === 18 || reply === 15) {
                 setPageStatus('Connected to the game server.');
             } else {

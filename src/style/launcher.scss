@@ -186,3 +186,67 @@
 .tool-icon svg { width: 29px; height: 29px; fill: none; stroke: currentColor; stroke-width: 1.2; }
 .world-option > span:nth-child(2) { min-width: 0; }
 .world-region { overflow-wrap: anywhere; }
+
+.local-worlds {
+    margin: 1rem 0;
+    padding: 1rem 0;
+    border-top: 1px solid #35433b;
+    border-bottom: 1px solid #35433b;
+    summary {
+        color: #d9c49a;
+        cursor: pointer;
+    }
+    label {
+        display: block;
+        margin-top: 1rem;
+        color: #d8ded5;
+        font-size: 0.85rem;
+    }
+    input {
+        width: 100%;
+        box-sizing: border-box;
+        background: #101b18;
+        border: 1px solid #58634e;
+        color: #edf0e4;
+        padding: 0.7rem;
+        margin: 0.5rem 0;
+        border-radius: 4px;
+    }
+    p {
+        font-size: 0.8rem;
+        line-height: 1.6;
+        color: #a5b3a6;
+        overflow-wrap: anywhere;
+    }
+}
+.local-world-options {
+    display: grid;
+    gap: 0.5rem;
+}
+.local-world-option {
+    text-align: left;
+    border: 1px solid #3b493f;
+    border-radius: 5px;
+    background: #16231e;
+    color: #e1e7dc;
+    padding: 0.7rem;
+    cursor: pointer;
+    strong,
+    small {
+        display: block;
+    }
+    small {
+        margin-top: 0.25rem;
+        color: #a5b3a6;
+    }
+    &[aria-pressed='true'] {
+        border-color: #c4a56a;
+        background: #263229;
+    }
+    &:hover {
+        border-color: #c4a56a;
+    }
+}
+.launcher .lore-status p {
+    overflow-wrap: anywhere;
+}

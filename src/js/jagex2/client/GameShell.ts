@@ -141,7 +141,7 @@ export default abstract class GameShell {
         try {
             await this.load();
         } catch (error) {
-            showStartupError();
+            showStartupError(error);
             throw error;
         }
         if (this.hasLoadingError()) {

@@ -42,8 +42,10 @@ export function setPageStatus(message: string, failed: boolean = false): void {
     if (retry) retry.hidden = !failed;
 }
 
-export function showStartupError(): void {
-    setPageStatus('Unable to load the client. Check your connection and try again, or choose another world. Game servers and files must be available separately from this website.', true);
+export function showStartupError(error?: unknown): void {
+    const cause: unknown = typeof ErrorEvent !== 'undefined' && error instanceof ErrorEvent ? error.error : typeof PromiseRejectionEvent !== 'undefined' && error instanceof PromiseRejectionEvent ? error.reason : error;
+    const detail: string = cause instanceof Error ? cause.message : '';
+    setPageStatus(`Unable to load the client. ${detail || 'Check your connection and try again, or choose another world. Game servers and files must be available separately from this website.'}`, true);
 }
 
 window.addEventListener('unhandledrejection', showStartupError);
@@ -62,6 +64,6 @@ export async function startClient(start: () => Promise<void>): Promise<void> {
         await start();
     } catch (error) {
         console.error(error);
-        showStartupError();
+        showStartupError(error);
     }
 }

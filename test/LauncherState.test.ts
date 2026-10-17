@@ -26,3 +26,8 @@ test('world directory is sorted, deduplicated, and validated', (): void => {
 test('directory rejects non-array responses', (): void => {
     expect((): WorldInfo[] => parseWorldChoices({worlds: []})).toThrow('invalid response');
 });
+
+test('remembers a local server origin and ignores malformed stored addresses', (): void => {
+    expect(parsePreferences('{"world":0,"localAddress":"http://localhost:8888"}').localAddress).toBe('http://localhost:8888');
+    expect(parsePreferences('{"world":0,"localAddress":"http://localhost/path"}').localAddress).toBeUndefined();
+});

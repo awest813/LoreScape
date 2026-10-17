@@ -1,118 +1,164 @@
+import {setPageStatus} from '../../page-shell';
+
+type PeerMessage = {type: string; id: string; data?: number[] | Uint8Array};
+
+function connectionId(): string {
+    // randomUUID is unavailable on some HTTP development origins.
+    return Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte: number): string => byte.toString(16).padStart(2, '0')).join('');
+}
+
+async function gatherIce(pc: RTCPeerConnection): Promise<void> {
+    if (pc.iceGatheringState === 'complete') return;
+    await new Promise<void>((resolve, reject): void => {
+        const cleanup = (): void => {
+            clearTimeout(timer);
+            pc.removeEventListener('icegatheringstatechange', changed);
+        };
+        const changed = (): void => {
+            if (pc.iceGatheringState === 'complete') {
+                cleanup();
+                resolve();
+            }
+        };
+        const timer: ReturnType<typeof setTimeout> = setTimeout((): void => {
+            cleanup();
+            reject(new Error('Peer discovery timed out. Check your network and try again.'));
+        }, 15000);
+        pc.addEventListener('icegatheringstatechange', changed);
+        changed();
+    });
+}
+
+async function copyDescription(pc: RTCPeerConnection, kind: string): Promise<boolean> {
+    await gatherIce(pc);
+    const description: string = JSON.stringify(pc.localDescription);
+    try {
+        await navigator.clipboard.writeText(description);
+        return true;
+    } catch {
+        return prompt(`Copy this ${kind} and send it to the other player. Cancel to stop.`, description) !== null;
+    }
+}
+
 export class Host {
     private peers: Map<string, RTCDataChannel> = new Map();
-    private worker: Worker;
-    public uniqueId: string = self.isSecureContext ? self.crypto.randomUUID() : '0';
+    public uniqueId: string = connectionId();
 
-    constructor(worker: Worker) {
-        this.worker = worker;
-    }
+    constructor(private readonly worker: Worker) {}
 
     async setupPeerConnection(): Promise<void> {
         const pc: RTCPeerConnection = new RTCPeerConnection({iceServers: [{urls: 'stun:stun.l.google.com:19302'}]});
         const dc: RTCDataChannel = pc.createDataChannel('channel');
-        const id: string = crypto.randomUUID();
+        const id: string = connectionId();
         this.peers.set(id, dc);
-
-        await pc.setLocalDescription(await pc.createOffer());
-
-        pc.onicegatheringstatechange = async (): Promise<void> => {
-            if (pc.iceGatheringState === 'complete') {
-                if (self.isSecureContext) {
-                    await navigator.clipboard.writeText(JSON.stringify(pc.localDescription));
-                } else {
-                    console.log(JSON.stringify(pc.localDescription));
-                }
-
-                let answer: string | null;
-                try {
-                    while ((answer = prompt('Offer copied to clipboard, paste answer here')) === null);
-                    pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(answer)));
-                } catch (e) {
-                    console.error(e);
-                }
-            }
+        const disconnect = (): void => {
+            if (!this.peers.delete(id)) return;
+            this.worker.postMessage({type: 'close', id});
+            dc.close();
+            pc.close();
         };
-
+        dc.onclose = disconnect;
+        dc.onerror = disconnect;
+        pc.onconnectionstatechange = (): void => {
+            if (['failed', 'closed'].includes(pc.connectionState)) disconnect();
+        };
         dc.onopen = (): void => {
-            dc.send(JSON.stringify({type: 'id', id: id}));
-            console.log('Connected to peer!');
+            dc.send(JSON.stringify({type: 'id', id}));
+            setPageStatus('A peer joined your browser world.');
         };
-
-        dc.onerror = (e): void => {
-            console.error(e);
-        };
-
-        dc.onmessage = (e: MessageEvent): void => {
-            const msg: {type: string; data: object; id: string} = JSON.parse(e.data);
-
-            if (msg.data) {
-                msg.data = Object.values(msg.data);
-            }
-
-            if (this.worker) {
-                this.worker.postMessage(msg);
+        dc.onmessage = (event: MessageEvent): void => {
+            try {
+                const msg: PeerMessage = JSON.parse(event.data);
+                if (!['connection', 'data', 'close'].includes(msg.type)) return;
+                // A guest must never address another player's worker connection.
+                this.worker.postMessage({...msg, id, ...(msg.data ? {data: Object.values(msg.data)} : {})});
+            } catch {
+                disconnect();
             }
         };
+        try {
+            await pc.setLocalDescription(await pc.createOffer());
+            if (!(await copyDescription(pc, 'offer'))) {
+                disconnect();
+                return;
+            }
+            const answer: string | null = prompt('Send the offer to your guest, then paste their answer here. Cancel to stop.');
+            if (!answer) {
+                disconnect();
+                return;
+            }
+            const remote: RTCSessionDescriptionInit = JSON.parse(answer);
+            if (remote.type !== 'answer' || typeof remote.sdp !== 'string') throw new Error('Paste a valid peer answer.');
+            await pc.setRemoteDescription(remote);
+            setPageStatus('Peer invitation accepted. Waiting for the connection…');
+        } catch (error) {
+            disconnect();
+            setPageStatus(error instanceof Error ? error.message : 'Unable to connect to the peer.', true);
+        }
     }
 
-    public postMessage(e: MessageEvent): void {
-        const dc: RTCDataChannel | undefined = this.peers.get(e.data.id);
-        const msg: {type: string; data: Uint8Array | object; id: string} = e.data;
-
-        if (msg.data) {
-            msg.data = Array.from(e.data.data);
-        }
-        if (dc && dc.readyState === 'open') {
-            dc.send(JSON.stringify(msg));
-        }
+    public postMessage(event: MessageEvent): void {
+        const msg: PeerMessage = event.data;
+        const dc: RTCDataChannel | undefined = this.peers.get(msg.id);
+        if (dc?.readyState === 'open') dc.send(JSON.stringify({...msg, ...(msg.data ? {data: Array.from(msg.data)} : {})}));
     }
 }
 
 export class Peer {
     public pc: RTCPeerConnection;
-    public dc: RTCDataChannel | undefined = undefined;
+    public dc: RTCDataChannel | undefined;
     public uniqueId: string | undefined;
 
-    constructor(worker: Worker) {
-        this.pc = new RTCPeerConnection({iceServers: [{urls: 'stun:stun.l.google.com:19302'}]});
+    constructor(private readonly worker: Worker) {
+        this.pc = this.createConnection();
+    }
 
-        this.pc.ondatachannel = (e: RTCDataChannelEvent): void => {
-            this.dc = e.channel;
-
-            this.dc.onopen = (): void => {
-                console.log('Connected to host!');
+    private createConnection(): RTCPeerConnection {
+        const pc: RTCPeerConnection = new RTCPeerConnection({iceServers: [{urls: 'stun:stun.l.google.com:19302'}]});
+        pc.ondatachannel = (event: RTCDataChannelEvent): void => {
+            const dc: RTCDataChannel = event.channel;
+            this.dc = dc;
+            dc.onerror = dc.onclose = (): void => {
+                if (this.dc !== dc) return;
+                this.dc = undefined;
+                this.uniqueId = undefined;
+                this.worker.onerror?.(new ErrorEvent('error', {message: 'Browser host disconnected.'}));
+                setPageStatus('The browser host disconnected. Select New user to join again.', true);
             };
-
-            this.dc.onerror = (e): void => {
-                console.error(e);
-            };
-
-            this.dc.onmessage = (e: MessageEvent): void => {
-                if (!this.uniqueId) {
-                    const msg: {type: string; data: Array<number>; id: string} = JSON.parse(e.data);
+            dc.onmessage = (message: MessageEvent): void => {
+                try {
+                    const msg: PeerMessage = JSON.parse(message.data);
                     if (msg.type === 'id') {
                         this.uniqueId = msg.id;
-                        return;
-                    }
+                        setPageStatus('Connected to the browser host. You can log in now.');
+                    } else if (this.uniqueId) this.worker.onmessage?.(message);
+                } catch {
+                    dc.close();
                 }
-
-                if (worker.onmessage) worker.onmessage(e);
             };
         };
-
-        this.pc.onicegatheringstatechange = async (): Promise<void> => {
-            if (this.pc.iceGatheringState === 'complete') {
-                if (self.isSecureContext) {
-                    await navigator.clipboard.writeText(JSON.stringify(this.pc.localDescription));
-                } else {
-                    console.log(JSON.stringify(this.pc.localDescription));
-                }
-            }
-        };
+        return pc;
     }
 
     public async handleOffer(offer: string): Promise<void> {
-        await this.pc.setRemoteDescription(new RTCSessionDescription(JSON.parse(offer)));
-        await this.pc.setLocalDescription(await this.pc.createAnswer());
+        const remote: RTCSessionDescriptionInit = JSON.parse(offer);
+        if (remote.type !== 'offer' || typeof remote.sdp !== 'string') throw new Error('Paste a valid host offer.');
+        this.dc?.close();
+        this.pc.close();
+        this.uniqueId = undefined;
+        this.dc = undefined;
+        this.pc = this.createConnection();
+        try {
+            await this.pc.setRemoteDescription(remote);
+            await this.pc.setLocalDescription(await this.pc.createAnswer());
+            if (!(await copyDescription(this.pc, 'answer'))) {
+                this.pc.close();
+                return;
+            }
+            setPageStatus('Send your answer to the host. Waiting for the connection…');
+        } catch (error) {
+            this.pc.close();
+            throw error;
+        }
     }
 }

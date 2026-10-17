@@ -32,6 +32,7 @@ import Model from './jagex2/graphics/Model';
 import SeqType from './jagex2/config/SeqType';
 import JString from './jagex2/datastruct/JString';
 import IdkType from './jagex2/config/IdkType';
+import {setPageStatus} from './page-shell';
 import {downloadUrl, sleep} from './jagex2/util/JsUtil';
 import Bzip from './vendor/bzip';
 import {playMidi, stopMidi} from './jagex2/util/AudioUtil';
@@ -726,21 +727,25 @@ export abstract class Client extends GameShell {
         if (Client.getParameter('world') === '999') {
             this.worker = new Worker('worker.js', {type: 'module'});
             this.worker.onmessage = this.onmessage;
+            this.worker.onerror = (): void => setPageStatus('The browser server failed to start. Check worker.js and its matching server dependencies, then reload.', true);
             this.host = new Host(this.worker);
         } else if (Client.getParameter('world') === '998') {
             this.worker = {
                 onmessage: (e: MessageEvent): void => {
-                    (this.stream as ClientWorkerStream).wwin.onmessage(e);
+                    if (this.stream instanceof ClientWorkerStream) this.stream.wwin.onmessage(e);
                 },
-                postMessage: (e: MessageEvent): void => {
+                postMessage: (message: {type: string; data?: Uint8Array; id?: string}): void => {
                     if (this.peer && this.peer.dc && this.peer.dc.readyState === 'open') {
-                        this.peer.dc.send(JSON.stringify(e));
+                        this.peer.dc.send(JSON.stringify({...message, ...(message.data ? {data: Array.from(message.data)} : {})}));
+                    } else {
+                        throw new Error('The browser host is disconnected.');
                     }
                 },
                 onerror: null,
                 onmessageerror: null,
                 terminate: (): void => {
-                    throw new Error();
+                    this.peer?.dc?.close();
+                    this.peer?.pc.close();
                 },
                 addEventListener: (): void => {
                     throw new Error();
@@ -766,12 +771,13 @@ export abstract class Client extends GameShell {
                 URL.revokeObjectURL(e.data.value);
                 return;
             case 'close':
-                this.worker?.postMessage({type: 'close', id: e.data.id});
+                if (this.host?.uniqueId === e.data.id) this.stream?.close();
+                else this.host?.postMessage(e);
                 return;
         }
 
         if (this.host?.uniqueId === e.data.id) {
-            (this.stream as ClientWorkerStream).wwin.onmessage(e.data);
+            if (this.stream instanceof ClientWorkerStream) this.stream.wwin.onmessage(e.data);
         } else {
             this.host?.postMessage(e);
         }
@@ -784,7 +790,7 @@ export abstract class Client extends GameShell {
             }
         } else if (+Client.getParameter('world') === 998) {
             if (this.peer) {
-                if (this.peer.dc) {
+                if (this.peer.dc?.readyState === 'open') {
                     console.log('You are already connected.');
                     return;
                 }
@@ -794,7 +800,7 @@ export abstract class Client extends GameShell {
                     try {
                         await this.peer.handleOffer(offer);
                     } catch (e) {
-                        console.error(e);
+                        setPageStatus(e instanceof Error ? e.message : 'Unable to join the browser host.', true);
                     }
                 }
             }
@@ -835,7 +841,11 @@ export abstract class Client extends GameShell {
                 }
             }
         }
-        await this.db?.cachesave(filename, data);
+        try {
+            await this.db?.cachesave(filename, data);
+        } catch {
+            console.warn('Unable to save game files to the browser cache.');
+        }
         return new Jagfile(data);
     };
 

@@ -1,7 +1,7 @@
 import GameShell from './jagex2/client/GameShell';
 import {Client} from './client';
 import {getWorldInfo, WorldInfo} from './worldlist';
-import {worldAddresses} from './connection';
+import {DEFAULT_LOCAL_ADDRESS, localWorldAddresses, worldAddresses} from './connection';
 
 export async function setupConfiguration(): Promise<void> {
     await world();
@@ -48,10 +48,10 @@ function localConfiguration(): void {
         return;
     }
 
-    if (window.location.protocol === 'https:') throw new Error('World 0 requires the local HTTP development site.');
-
-    Client.serverAddress = 'http://localhost';
-    Client.httpAddress = 'http://localhost';
+    const addresses: {files: string; host: string; sockets: string[]} = localWorldAddresses(GameShell.getParameter('local') || DEFAULT_LOCAL_ADDRESS, window.location.protocol === 'https:');
+    Client.serverAddress = addresses.host;
+    Client.httpAddress = addresses.files;
+    Client.webSocketAddresses = addresses.sockets;
     Client.portOffset = 0;
 }
 

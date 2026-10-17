@@ -15,7 +15,25 @@ npm run dev
 
 Open `http://localhost:8080/`. The launcher starts with live world 1 selected. Choose a world and select **Enter world**, or launch directly with `?world=1&detail=low&method=0`. Low detail is useful on slower devices. Desktop keyboard and mouse are recommended; the canvas scales to smaller screens.
 
-World 0 connects to a separately running local server at `http://localhost`. Use the local HTTP development site for world 0. HTTPS-hosted Pages cannot use this configuration. Worlds 998 and 999 require separate peer/worker server bundles and game data; they are not included in a normal build.
+Open **Local & browser worlds** to select one of these modes:
+
+| Mode | Requirements |
+| --- | --- |
+| Local server (0) | A separately running compatible revision 225 server. Set **Server web address** to its HTTP/HTTPS origin and web port (default `http://localhost:8888`; use `http://localhost` for port 80). |
+| Host in browser (999) | A compatible `worker.js` ES module and its dependencies beside `index.html`, plus matching `data/pack/client/` game data. These server bundles are **not included** in this repository or a normal Pages build. |
+| Join a host (998) | Matching `data/pack/client/` game data on this website, WebRTC support, and a running browser host. |
+
+For an HTTP local server, run `npm run dev` and open `http://localhost:8080/`. HTTPS Pages requires an HTTPS/WSS server with a trusted certificate. The server must allow downloads from the launcher origin (CORS), accept WebSocket connections from it, and use RSA keys compatible with this client. The launcher tries WebSockets on the configured web port first, then the legacy port 43595. The server address is remembered on this device. A direct link looks like `?world=0&local=http%3A%2F%2Flocalhost%3A8888&detail=low`.
+
+Browser modes check for required resources before loading the game. Packed client data must include a 36-byte `crc` table and the matching `title`, `config`, `interface`, `media`, `models`, `textures`, `wordenc`, and `sounds` archives; provide `songs/` for music. Copy any external bundles into `src/public/` before building, or into the served `public/` directory for a temporary local preview. Files added only to `public/` will not be included in CI deployments. Use the **New user** button on the login screen to exchange the host offer and guest answer; while logged in, a host can type `::peer`. Clipboard access has a manual copy fallback, and Cancel stops the invitation. Direct peers may fail on restrictive networks; this client has no TURN relay.
+
+Check your local server without sending credentials:
+
+```sh
+npm run check:server -- --local http://localhost:8888 --origin http://localhost:8080
+```
+
+If startup fails, the status panel now shows the failed endpoint and error. A failed CRC request usually means the server is stopped, the web port is wrong, or browser access is blocked by CORS/mixed content. An HTML response at `/crc` means the URL points at a website rather than the game file service. Browser cache is optional; unavailable storage no longer prevents startup.
 
 ## Validate and build
 
@@ -91,4 +109,4 @@ For your own deployment, set `WORLD_LIST_URL` in `src/js/connection.ts` to your 
 
 Your backend must serve client revision 225 and matching game files and public RSA parameters, allow file downloads from the Pages origin via CORS, and accept that origin during WebSocket upgrades. The current Pages origin is `https://awest813.github.io`, without the `/LoreScape/` path. Current upstream servers can enforce `WEB_ALLOWED_ORIGIN` and deployment-cookie protection. A separately hosted client cannot bypass those checks; coordinate the backend configuration or co-host the client as required.
 
-The development workspace used for this update blocks outbound access to `2004scape.org`, so public-world availability could not be verified here. Actual WebSocket connections and seed exchange are covered against local test servers, including fragmented frames, early disconnects, endpoint fallback, CORS failures, and timeouts.
+The development workspace used for this update blocks outbound access to `2004scape.org`, so public-world availability could not be verified here. The generic startup message alone does not identify the public-world failure; use the detailed status and browser network panel to distinguish directory errors, game-file errors, and browser restrictions. The official 2004Scape site is linked when a public world fails. Actual WebSocket connections and seed exchange are covered against local test servers, including fragmented frames, early disconnects, endpoint fallback, CORS failures, and timeouts.

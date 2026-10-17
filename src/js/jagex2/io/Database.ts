@@ -22,10 +22,12 @@ export default class Database {
                 target.result.createObjectStore('cache');
             };
 
+            request.onblocked = (): void => reject(new Error('Browser cache is blocked by another open client.'));
+
             request.onerror = (event: Event): void => {
                 const target: IDBOpenDBRequest = event.target as IDBOpenDBRequest;
                 console.error('database error!: ', target.error);
-                reject(target.result);
+                reject(target.error || new Error('Browser cache unavailable.'));
             };
         });
     };

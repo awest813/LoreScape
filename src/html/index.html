@@ -33,7 +33,17 @@
                     <div class="world-filter"><label for="world-filter">Show</label><select id="world-filter"><option value="all">All worlds</option><option value="free">Free worlds</option><option value="members">Members worlds</option></select><span id="world-count" role="status">Fetching worlds…</span></div>
                     <p id="world-notice" class="world-notice" role="status" hidden></p>
                     <div id="world-list" class="world-list" role="group" aria-label="Available worlds" aria-busy="true"><p class="world-placeholder">Looking for your next destination…</p></div>
-                    <details class="world-manual" id="world-manual"><summary>Connect by world ID</summary><label for="world">World ID<input id="world" name="world" type="number" min="0" max="999" step="1" required value="1"></label><p>World 0 needs a local server. Worlds 998/999 need separate peer or worker bundles.</p></details>
+                    <details class="world-manual" id="world-manual"><summary>Connect by world ID</summary><label for="world">World ID<input id="world" name="world" type="number" min="0" max="999" step="1" required value="1"></label><p>For worlds 0, 998, and 999, use the local world controls below.</p></details>
+                    <details class="local-worlds" id="local-worlds"><summary>Local &amp; browser worlds</summary>
+                        <p class="world-placeholder">Bring your own server or matching browser bundles.</p>
+                        <div class="local-world-options" role="group" aria-label="Local worlds">
+                            <button type="button" class="local-world-option" data-world="0" aria-pressed="false"><strong>Local server</strong><small>World 0 · Connect to your server</small></button>
+                            <button type="button" class="local-world-option" data-world="999" aria-pressed="false"><strong>Host in browser</strong><small>World 999 · Worker bundle required</small></button>
+                            <button type="button" class="local-world-option" data-world="998" aria-pressed="false"><strong>Join a host</strong><small>World 998 · Game data required</small></button>
+                        </div>
+                        <div id="local-server-settings" hidden><label for="local-address">Server web address<input id="local-address" type="url" placeholder="http://localhost:8888" spellcheck="false" autocomplete="url" aria-describedby="local-help" disabled></label><p id="local-help">Use the server's web port. The client tries WebSockets on this port, then port 43595. HTTP servers need the HTTP launcher at localhost:8080; HTTPS Pages needs an HTTPS/WSS server.</p></div>
+                        <p id="local-mode-help" class="world-notice" hidden></p>
+                    </details>
                     <fieldset class="graphics-settings"><legend><span>02</span> Set the atmosphere</legend><div class="graphics-options">
                         <label><input type="radio" name="detail" value="high" checked><span><strong>High detail</strong><small>The full classic look</small></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></label>
                         <label><input type="radio" name="detail" value="low"><span><strong>Low detail</strong><small>Lighter on your device</small></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></label>
@@ -47,7 +57,7 @@
         </div>
         <section class="client-stage" id="client-stage" hidden aria-labelledby="client-heading">
             <div class="client-toolbar"><div><p class="launcher-eyebrow">YOUR ADVENTURE</p><h1 id="client-heading">World 1</h1><span id="client-detail"></span></div><div class="client-actions"><a href="index.html">Back to launcher</a><button id="fullscreen-client" type="button" hidden>Fullscreen</button></div></div>
-            <div id="client-status"></div>
+            <div id="client-status"></div><p id="official-play" hidden>Public world unavailable? <a href="https://2004scape.org">Try the official 2004Scape site</a>.</p>
             <div class="client-screen"><canvas id="canvas" width="789" height="532" tabindex="0" aria-label="Game client. Focus here to use the keyboard.">Your browser must support Canvas to run the client.</canvas></div>
             <p class="client-hint">Click the game to focus it. Use your mouse to interact and your keyboard to chat.</p>
         </section>

@@ -3,7 +3,7 @@ const https = require('node:https');
 const {WebSocket} = require('ws');
 const {HttpsProxyAgent} = require('https-proxy-agent');
 const {getProxyForUrl} = require('proxy-from-env');
-const {WORLD_LIST_URL, worldAddresses} = require('../src/js/connection.ts');
+const {DEFAULT_LOCAL_ADDRESS, localWorldAddresses, WORLD_LIST_URL, worldAddresses} = require('../src/js/connection.ts');
 
 const args = process.argv.slice(2);
 function option(name, fallback) {
@@ -12,10 +12,12 @@ function option(name, fallback) {
     if (!args[index + 1] || args[index + 1].startsWith('--')) throw new Error(`Missing value for ${name}.`);
     return args[index + 1];
 }
-const origin = new URL(option('--origin', 'https://awest813.github.io')).origin;
-const id = Number(option('--world', '1'));
+const local = option('--local', undefined);
+const id = Number(option('--world', local ? '0' : '1'));
+const origin = new URL(option('--origin', id === 0 ? 'http://localhost:8080' : 'https://awest813.github.io')).origin;
 const directory = option('--directory', WORLD_LIST_URL);
-if (!Number.isInteger(id) || id < 1 || id > 997) throw new Error('Choose a live world ID between 1 and 997.');
+if (!Number.isInteger(id) || id < 0 || id > 997) throw new Error('Choose world 0 for a local server or a live world ID between 1 and 997.');
+if (local && id !== 0) throw new Error('--local must be used with world 0.');
 
 function agentFor(url) {
     const proxy = getProxyForUrl(url.replace(/^wss:/, 'https:').replace(/^ws:/, 'http:'));
@@ -38,7 +40,7 @@ function download(address, redirects = 0) {
             }
             if (response.statusCode !== 200) { response.resume(); reject(new Error(`HTTP ${response.statusCode} from ${url.origin}${url.pathname}`)); return; }
             const allowed = response.headers['access-control-allow-origin'];
-            if (allowed !== '*' && allowed !== origin) { response.resume(); reject(new Error(`The server does not allow browser downloads from ${origin} (CORS).`)); return; }
+            if (url.origin !== origin && allowed !== '*' && allowed !== origin) { response.resume(); reject(new Error(`The server does not allow browser downloads from ${origin} (CORS).`)); return; }
             const chunks = [];
             let length = 0;
             response.on('data', chunk => {
@@ -81,12 +83,17 @@ function handshake(address) {
 
 (async () => {
     console.log(`Checking world ${id} for browser origin ${origin}`);
-    const list = JSON.parse((await download(directory)).toString('utf8'));
-    if (!Array.isArray(list)) throw new Error('The world directory is not a JSON array.');
-    const world = list.find(entry => entry?.id === id);
-    if (!world) throw new Error(`World ${id} is not listed.`);
-    const endpoints = worldAddresses(world.address, world.portOffset, origin.startsWith('https:'), world.websocketAddress);
-    console.log('PASS: world directory and CORS');
+    let endpoints;
+    if (id === 0) {
+        endpoints = localWorldAddresses(local || DEFAULT_LOCAL_ADDRESS, origin.startsWith('https:'));
+    } else {
+        const list = JSON.parse((await download(directory)).toString('utf8'));
+        if (!Array.isArray(list)) throw new Error('The world directory is not a JSON array.');
+        const world = list.find(entry => entry?.id === id);
+        if (!world) throw new Error(`World ${id} is not listed.`);
+        endpoints = worldAddresses(world.address, world.portOffset, origin.startsWith('https:'), world.websocketAddress);
+        console.log('PASS: world directory and CORS');
+    }
     const crc = await download(`${endpoints.files}/crc`);
     if (crc.length !== 36) throw new Error(`Expected a 36-byte client CRC table; received ${crc.length} bytes.`);
     console.log('PASS: game file service and CORS');
