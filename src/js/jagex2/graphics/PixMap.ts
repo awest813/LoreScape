@@ -12,7 +12,7 @@ export default class PixMap {
 
     constructor(width: number, height: number, ctx: CanvasRenderingContext2D = canvas2d) {
         this.ctx = ctx;
-        this.image = this.ctx.getImageData(0, 0, width, height);
+        this.image = this.ctx.createImageData(width, height);
         this.paint = new Uint32Array(this.image.data.buffer);
         this.pixels = new Int32Array(width * height);
         this.width = width;

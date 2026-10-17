@@ -5,6 +5,7 @@ import Draw3D from '../graphics/Draw3D';
 import {sleep} from '../util/JsUtil';
 import {CanvasEnabledKeys, KeyCodes} from './KeyCodes';
 import InputTracking from './InputTracking';
+import FramePacer from './FramePacer';
 import {canvas, canvas2d} from '../graphics/Canvas';
 
 export default abstract class GameShell {
@@ -30,7 +31,7 @@ export default abstract class GameShell {
     protected otim: number[] = [];
     protected fps: number = 0;
     protected fpos: number = 0;
-    protected frameTime: number[] = [];
+    protected frameTime: number[] = new Array(50).fill(0);
     protected redrawScreen: boolean = true;
     protected resizeToFit: boolean = false;
     protected tfps: number = 50; // custom
@@ -159,6 +160,7 @@ export default abstract class GameShell {
         let ratio: number = 256;
         let delta: number = 1;
         let count: number = 0;
+        const pacer: FramePacer = new FramePacer();
 
         while (this.state >= 0) {
             if (this.state > 0) {
@@ -223,6 +225,7 @@ export default abstract class GameShell {
             }
 
             const time: number = performance.now();
+            if (!pacer.ready(time, this.tfps, document.hidden)) continue;
 
             if (this.redrawScreen) {
                 this.refresh();
@@ -231,14 +234,6 @@ export default abstract class GameShell {
 
             this.frameTime[this.fpos] = (performance.now() - time) / 1000;
             this.fpos = (this.fpos + 1) % this.frameTime.length;
-
-            // this is custom for targeting specific fps (on mobile).
-            if (this.tfps < 50) {
-                const tfps: number = 1000 / this.tfps - (performance.now() - ntime);
-                if (tfps > 0) {
-                    await sleep(tfps);
-                }
-            }
         }
         if (this.state === -1) {
             this.shutdown();

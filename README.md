@@ -63,6 +63,8 @@ npm run check:pages
 
 For launcher browser regression checks, run `npx playwright install chromium`, then `npm run test:launcher`. To use an existing Chromium installation, set `LORESCAPE_CHROMIUM_PATH` to its executable instead. The checks serve the built website locally and use fixture world services; they do not contact public game servers.
 
+See [browser performance and compatibility](docs/BROWSER-PERFORMANCE.md) for frame pacing, background tabs, browser requirements, and verification limits.
+
 The build compiles the Bzip2 WebAssembly module and writes the website to `public/`. It uses relative asset paths, so the same build works at `/LoreScape/`, at another repository path, or on a root/custom domain. JavaScript and CSS use content hashes and shared chunks. Keep the generated HTML, JavaScript, CSS, WebAssembly, soundfont, manifest, and icons together.
 
 To preview production locally, run `npm run preview` after building. To test the exact generated files with any static HTTP server, serve `public/`; do not open the HTML using `file://`.

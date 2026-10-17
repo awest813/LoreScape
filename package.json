@@ -76,7 +76,8 @@
     "preview": "node scripts/preview.cjs",
     "check:pages": "node scripts/check-pages.cjs",
     "check:server": "node --experimental-strip-types scripts/check-server.cjs",
-    "test:launcher": "node tools/tests/browser-launcher.cjs"
+    "test:launcher": "node tools/tests/browser-launcher.cjs",
+    "test:performance": "node tools/tests/browser-performance.cjs"
   },
   "repository": {
     "type": "git",

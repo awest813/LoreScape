@@ -3,6 +3,7 @@ import {Client} from './client';
 import {getWorldInfo, WorldInfo} from './worldlist';
 import {DEFAULT_LOCAL_ADDRESS, localWorldAddresses, worldAddresses} from './connection';
 import {parseSetupKey} from './setup-key';
+import {fetchJsonWithTimeout} from './fetch-timeout';
 
 export function packFileUrl(name: 'npc' | 'obj' | 'sound'): string {
     return GameShell.getParameter('world') === '0' && GameShell.getParameter('setup') === '1' ? `${Client.httpAddress}/tool-data/${name}.pack` : `${Client.githubRepository}/data/src/pack/${name}.pack`;
@@ -60,9 +61,7 @@ async function localConfiguration(): Promise<void> {
     Client.portOffset = 0;
     if (GameShell.getParameter('setup') === '1') {
         if (addresses.files !== window.location.origin) throw new Error('Open the setup kit launcher on the same address as its game server.');
-        const response: Response = await fetch('/lorescape-server.json', {signal: AbortSignal.timeout(10000), cache: 'no-store'});
-        if (!response.ok) throw new Error('Setup kit login configuration is unavailable. Restart node start.cjs and open its launcher link.');
-        Client.modulus = parseSetupKey(await response.json());
+        Client.modulus = parseSetupKey(await fetchJsonWithTimeout('/lorescape-server.json', 10000));
         Client.exponent = 65537n;
     }
 }
