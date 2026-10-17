@@ -5,8 +5,8 @@
         <meta name="viewport" content="width=device-width,initial-scale=1" />
         <title>LoreScape · Your private adventure</title>
         <meta name="theme-color" content="#101c1b" />
-        <link rel="manifest" href="/manifest.json" />
-        <link rel="stylesheet" href="/coop/style.css" />
+        <link rel="manifest" href="manifest.json" />
+        <link rel="stylesheet" href="coop/style.css" />
     </head>
     <body>
         <main>
@@ -30,12 +30,12 @@
                         </select></label
                     ><label id="worldNameLabel">Name your world<input id="worldName" maxlength="60" value="My world" /></label>
                     <div class="row launch-actions">
-                        <button id="solo">
+                        <button id="installOffline">Install cache &amp; play offline</button><button id="cancelInstall" class="secondary" hidden>Cancel installation</button><button id="solo" class="secondary">
                             Play adventure
                             <span aria-hidden="true">→</span></button
                         ><button hidden id="host" class="secondary">Create private room</button>
                     </div>
-                    <p id="worldInfo">Create a world to start an adventure.</p>
+                    <p id="installOfflineStatus" role="status" aria-live="polite">Ready to install the complete offline game.</p><progress id="installProgress" aria-label="Offline installation" hidden max="100" value="0"></progress><p id="installOfflineHelp">One download installs the game and its private world engine. No account or separate server needed. Keep this page bookmarked to return offline. Public-world characters stay on their servers.</p><p id="worldInfo">Create a world to start an adventure.</p>
                     <details class="world-tools">
                         <summary>Manage saves & backups</summary>
                         <p>Download a backup to carry your progress to another browser.</p>
@@ -187,6 +187,6 @@
             </details>
             <footer>Character progression, shared inventories, world variables, and settings persist. NPCs, ground items, and temporary world changes reset between sessions.</footer>
         </main>
-        <script type="module" src="/coop/lobby.mjs"></script>
+        <script type="module" src="coop/lobby.mjs"></script>
     </body>
 </html>

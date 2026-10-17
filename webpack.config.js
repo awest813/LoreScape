@@ -116,7 +116,7 @@ module.exports = (env = {}) => {
             compiler.hooks.thisCompilation.tap('CoopManifest', compilation => {
                 compilation.hooks.processAssets.tap({name: 'CoopManifest', stage: webpack.Compilation.PROCESS_ASSETS_STAGE_SUMMARIZE}, () => {
                     const manifest = JSON.parse(compilation.getAsset('manifest.json').source.source().toString());
-                    Object.assign(manifest, {id: '/coop.html', start_url: '/coop.html', scope: '/', display: 'standalone'});
+                    Object.assign(manifest, {id: './coop.html', start_url: './coop.html', scope: './', display: 'standalone'});
                     compilation.updateAsset('manifest.json', new webpack.sources.RawSource(JSON.stringify(manifest)));
                 });
             });

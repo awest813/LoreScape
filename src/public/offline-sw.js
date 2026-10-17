@@ -1,7 +1,11 @@
 /* Only application assets are cached here. Character saves remain in IndexedDB. */
-const PREFIX = 'lorescape-assets-v1-';
-const META = 'lorescape-offline-meta-v1';
-const POINTER = '/_lorescape/offline-active';
+const BASE = new URL(self.registration.scope);
+const scoped = url => new URL(url.slice(1), BASE).href;
+const namespace = BASE.pathname === '/' ? '' : encodeURIComponent(BASE.pathname) + '-';
+const PREFIX = 'lorescape-assets-v1-' + namespace;
+const META = 'lorescape-offline-meta-v1' + namespace;
+const POINTER = scoped('/_lorescape/offline-active');
+const ownsCache = name => name.startsWith(PREFIX) && /^[a-f0-9]{20}(?:-|$)/.test(name.slice(PREFIX.length));
 let installing = false;
 let activeManifest;
 const cacheName = manifest => manifest.cacheName || PREFIX + manifest.revision;
@@ -18,7 +22,7 @@ async function status() {
     if (!manifest || !(await caches.has(cacheName(manifest)))) return {ready: false, supportsCancellation: true};
     const cache = await caches.open(cacheName(manifest));
     const urls = new Set((await cache.keys()).map(request => request.url));
-    if (manifest.assets.some(asset => !urls.has(new URL(asset.url, self.location.origin).href))) return {ready: false, supportsCancellation: true};
+    if (manifest.assets.some(asset => !urls.has(scoped(asset.url)))) return {ready: false, supportsCancellation: true};
     return {ready: true, supportsCancellation: true, revision: manifest.revision, bytes: manifest.bytes, files: manifest.assets.length};
 }
 async function prepare(progress, controller) {
@@ -26,7 +30,7 @@ async function prepare(progress, controller) {
     installing = true;
     let staging, previous, committed = false;
     try {
-        const response = await fetch('/offline-assets.json', {cache: 'no-store', signal: controller.signal});
+        const response = await fetch(scoped('/offline-assets.json'), {cache: 'no-store', signal: controller.signal});
         if (!response.ok) throw new Error('Offline game download is unavailable. Try again while connected.');
         const manifest = await response.json();
         if (
@@ -66,11 +70,11 @@ async function prepare(progress, controller) {
                 while (!failure && !controller.signal.aborted && next < manifest.assets.length) {
                     const asset = manifest.assets[next++];
                     try {
-                        const result = await fetch(asset.url, {cache: 'no-store', signal: controller.signal});
+                        const result = await fetch(scoped(asset.url), {cache: 'no-store', signal: controller.signal});
                         if (!result.ok) throw new Error('Could not download ' + asset.url);
                         const bytes = await result.clone().arrayBuffer();
                         if (bytes.byteLength !== asset.bytes || (await hash(bytes)) !== asset.sha256) throw new Error('Game files changed during download. Please try again.');
-                        await cache.put(asset.url, result);
+                        await cache.put(scoped(asset.url), result);
                         downloaded += asset.bytes;
                         progress({done: ++done, total: manifest.assets.length, bytes: downloaded, totalBytes: manifest.bytes});
                     } catch (error) {
@@ -81,11 +85,11 @@ async function prepare(progress, controller) {
             })
         );
         if (failure) throw failure;
-        controller.signal.throwIfAborted();
+        if (controller.signal.aborted) throw controller.signal.reason || new Error('Offline download cancelled');
         await (await caches.open(META)).put(POINTER, new Response(JSON.stringify(manifest), {headers: {'Content-Type': 'application/json'}}));
         activeManifest = manifest;
         committed = true;
-        for (const name of await caches.keys()) if (name.startsWith(PREFIX) && name !== staging) await caches.delete(name).catch(() => {});
+        for (const name of await caches.keys()) if (ownsCache(name) && name !== staging) await caches.delete(name).catch(() => {});
         return status();
     } catch (error) {
         if (!committed && staging && staging !== (previous && cacheName(previous))) await caches.delete(staging);
@@ -112,7 +116,7 @@ self.addEventListener('message', event => {
                         if (event.data.type === 'offline-prepare') return prepare(progress => port.postMessage({progress}), controller);
                         installing = true;
                         try {
-                            for (const name of await caches.keys()) if (name === META || name.startsWith(PREFIX)) await caches.delete(name);
+                            for (const name of await caches.keys()) if (name === META || ownsCache(name)) await caches.delete(name);
                             activeManifest = null;
                             return {ready: false, supportsCancellation: true};
                         } finally {
@@ -137,7 +141,10 @@ self.addEventListener('message', event => {
 });
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
-    if (event.request.method !== 'GET' || url.origin !== self.location.origin || url.pathname === '/signal' || url.pathname === '/offline-assets.json' || url.pathname === '/offline-sw.js') return;
+    if (event.request.method !== 'GET' || url.origin !== BASE.origin || !url.pathname.startsWith(BASE.pathname)) return;
+    const pathname = '/' + url.pathname.slice(BASE.pathname.length);
+    if (pathname === '/coop/') { event.respondWith(Response.redirect(scoped('/coop.html') + url.search)); return; }
+    if (['/signal', '/offline-assets.json', '/offline-sw.js'].includes(pathname)) return;
     event.respondWith(
         (async () => {
             try {
@@ -145,8 +152,8 @@ self.addEventListener('fetch', event => {
             } catch {
                 const manifest = await active();
                 if (manifest) {
-                    const key = url.pathname === '/' ? (url.searchParams.has('world') ? '/index.html' : '/coop.html') : ['/coop', '/coop/'].includes(url.pathname) ? '/coop.html' : url.pathname;
-                    const cached = await (await caches.open(cacheName(manifest))).match(key);
+                    const key = pathname === '/' ? (url.searchParams.has('world') ? '/index.html' : '/coop.html') : ['/coop', '/coop/'].includes(pathname) ? '/coop.html' : pathname;
+                    const cached = await (await caches.open(cacheName(manifest))).match(scoped(key));
                     if (cached) return cached;
                 }
                 return new Response('This file is unavailable offline. Download the offline game pack from the lobby while connected.', {status: 503, headers: {'Content-Type': 'text/plain'}});

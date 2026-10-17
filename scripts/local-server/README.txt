@@ -93,3 +93,5 @@ node-forge still has an unpatched high-severity signature-verification advisory
 (GHSA-86w9-cpqp-85rv). This local server uses it for RSA key parsing/arithmetic,
 not signature verification. It remains an upstream dependency limitation;
 do not treat this kit as an audited public production server.
+
+The launcher's Install cache & play offline option opens the complete solo package on the LoreScape website. Its first installation needs an internet connection; later play uses that browser's cached files and private saves. Those saves are separate from this native server's player files.

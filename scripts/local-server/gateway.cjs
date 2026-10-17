@@ -31,6 +31,11 @@ function createGateway({client, server, backendPort = 8888, publicOrigin}) {
         try { url = new URL(req.url, 'http://localhost'); pathname = decodeURIComponent(url.pathname); }
         catch { res.writeHead(400).end(); return; }
         const origin = launcherOrigin(req);
+        if (pathname === '/offline/coop.html') {
+            const install = url.searchParams.get('install') === '1' ? '?install=1' : '';
+            res.writeHead(302, {Location: 'https://awest813.github.io/LoreScape/offline/coop.html' + install}).end();
+            return;
+        }
         if (pathname === '/lorescape-local-server.zip') {
             res.writeHead(302, {Location: 'https://awest813.github.io/LoreScape/lorescape-local-server.zip'}).end();
             return;

@@ -27,7 +27,15 @@ jobs:
       - run: npm test -- --runInBand
       - run: npm run test:session
       - run: npm run build
-      - run: npm run check:pages
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - run: npm run setup:server
+      - run: npm run build:offline
+      - run: npm run check:pages -- --offline
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:install-offline
       - uses: actions/upload-pages-artifact@v3
         with:
           path: public

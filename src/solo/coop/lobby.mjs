@@ -69,7 +69,7 @@ function updateStartup() {
         if (moveFocus) $('game').contentWindow.document.querySelector('canvas')?.focus();
         $('gameViewport').classList.remove('starting');
         $('gameViewport').setAttribute('aria-busy', 'false');
-        notice('World ready. Select Existing User and enter your character name.');
+        notice(session.autoPlay ? 'Your private offline adventure is ready. Progress saves on this device.' : 'World ready. Select Existing User and enter your character name.');
     }
 }
 function startupFailure(message) {
@@ -373,7 +373,9 @@ async function start(message, role, data) {
     $('save').disabled = true;
     $('applySettings').disabled = true;
     beginStartup();
-    $('game').src = `/?world=${role === 'host' ? 999 : 998}&detail=${preferences.detail}&method=0&coop=1&startup=${encodeURIComponent(session.id)}`;
+    session.autoPlay = message.autoPlay === true;
+    const autoCharacter = message.autoPlay ? Object.keys(data.characters)[0] || 'adventurer' : '';
+    $('game').src = `index.html?world=${role === 'host' ? 999 : 998}&detail=${preferences.detail}&method=0&coop=1&startup=${encodeURIComponent(session.id)}${autoCharacter ? '&offline=1&character=' + encodeURIComponent(autoCharacter) : ''}`;
     resizeGame();
     notice(role === 'host' ? 'Starting your saved world…' : 'Joining the host…');
 }
@@ -476,7 +478,7 @@ function action(id, callback) {
             await callback();
         } catch (error) {
             notice(error.message, true);
-            if (!session && ['host', 'solo', 'join'].includes(id)) {
+            if (!session && ['host', 'solo', 'join', 'installOffline'].includes(id)) {
                 openingState(false);
                 releaseLock?.();
                 releaseLock = null;
@@ -509,7 +511,7 @@ action('host', async () => {
     await connect();
     send({type: 'create', worldId: data.id, settings: data.settings});
 });
-action('solo', async () => {
+async function playSolo(autoPlay = false) {
     const data = await prepareWorld();
     await start(
         {
@@ -518,12 +520,14 @@ action('solo', async () => {
             worldId: data.id,
             iceServers: [],
             settings: data.settings,
-            solo: true
+            solo: true,
+            autoPlay
         },
         'host',
         data
     );
-});
+}
+action('solo', () => playSolo());
 async function cancelStartup(retry = false) {
     if (!session || $('startupPanel').hidden) return;
     const old = session;
@@ -828,10 +832,17 @@ async function storageInfo() {
         : 'Storage estimates are unavailable in this browser.';
     $('persistStorage').disabled = persistent || !navigator.storage?.persist;
 }
-let canCancelOffline = false;
+let canCancelOffline = true;
+let offlineReady = false;
+function offlineMessage(text) {
+    $('offlineStatus').textContent = text;
+    $('installOfflineStatus').textContent = text;
+}
 function offlineStatus(status) {
     canCancelOffline = status.supportsCancellation === true;
-    $('offlineStatus').textContent = status.ready ? `Offline ready · ${(status.bytes / 1048576).toFixed(1)} MiB · solo play works without the server.` : 'Game files are not downloaded yet. Connect once, then download for offline solo play.';
+    offlineReady = status.ready === true;
+    $('installOffline').textContent = offlineReady ? 'Play offline' : 'Install cache & play offline';
+    offlineMessage(status.ready ? `Offline ready · ${(status.bytes / 1048576).toFixed(1)} MiB · solo play works without the server.` : 'Game files are not downloaded yet. Connect once, then download for offline solo play.');
 }
 action('persistStorage', async () => {
     const granted = await navigator.storage.persist();
@@ -839,29 +850,38 @@ action('persistStorage', async () => {
     notice(granted ? 'Persistent browser storage granted. Keep exported backups too.' : 'The browser did not grant persistence. Saves still work; keep exported backups.');
 });
 let downloadController = null;
-$('cancelOffline').onclick = () => {
+$('cancelInstall').onclick = $('cancelOffline').onclick = () => {
     downloadController?.abort();
     $('cancelOffline').disabled = true;
-    $('offlineStatus').textContent = 'Cancelling download…';
+    $('cancelInstall').disabled = true;
+    offlineMessage('Cancelling download…');
 };
-action('downloadOffline', async () => {
+async function downloadOffline() {
     if (session || opening) throw new Error('End your session before updating offline files');
+    if (downloadController) throw new Error('An offline download is already running');
     downloadController = new AbortController();
+    for (const id of ['solo', 'host', 'join', 'installOffline']) $(id).disabled = true;
     $('offlineProgress').hidden = false;
+    $('installProgress').hidden = false;
+    $('installProgress').value = 0;
     $('offlineProgress').value = 0;
     $('cancelOffline').hidden = !canCancelOffline;
+    $('cancelInstall').hidden = !canCancelOffline;
+    $('cancelInstall').disabled = false;
     $('cancelOffline').disabled = false;
     $('removeOffline').disabled = true;
-    $('offlineStatus').textContent = 'Preparing offline download…';
+    offlineMessage('Preparing offline download…');
     try {
         offlineStatus(
             await offlineAction('offline-prepare', progress => {
                 $('offlineProgress').value = (progress.done / progress.total) * 100;
-                $('offlineStatus').textContent = `Downloading ${Math.floor(progress.done / progress.total * 100)}% · ${progress.done} / ${progress.total} files · ${(progress.bytes / 1048576).toFixed(1)}${progress.totalBytes ? ' / ' + (progress.totalBytes / 1048576).toFixed(1) : ''} MiB`;
+                $('installProgress').value = $('offlineProgress').value;
+                offlineMessage(`Downloading ${Math.floor(progress.done / progress.total * 100)}% · ${progress.done} / ${progress.total} files · ${(progress.bytes / 1048576).toFixed(1)}${progress.totalBytes ? ' / ' + (progress.totalBytes / 1048576).toFixed(1) : ''} MiB`);
             }, downloadController.signal)
         );
         notice('Offline game ready. You can return here without a connection.');
         await storageInfo();
+        return true;
     } catch (error) {
         try { offlineStatus(await offlineAction('offline-status')); } catch {}
         if (downloadController.signal.aborted) notice('Download cancelled. Existing offline files and character saves are kept.');
@@ -869,9 +889,19 @@ action('downloadOffline', async () => {
     } finally {
         downloadController = null;
         $('cancelOffline').hidden = true;
+        $('cancelInstall').hidden = true;
         $('removeOffline').disabled = false;
         $('offlineProgress').hidden = true;
+        $('installProgress').hidden = true;
+        for (const id of ['solo', 'host', 'join', 'installOffline']) $(id).disabled = false;
     }
+}
+action('downloadOffline', downloadOffline);
+action('installOffline', async () => {
+    await worldsReady;
+    if (session || opening) throw new Error('Return to the launcher before starting another adventure');
+    if (!offlineReady && !(await downloadOffline())) return;
+    await playSolo(true);
 });
 action('removeOffline', async () => {
     if (session || opening) throw new Error('End your session before removing offline files');
@@ -886,7 +916,7 @@ storageInfo().catch(error => notice(error.message, true));
 offlineAction('offline-status')
     .then(offlineStatus)
     .catch(error => {
-        $('offlineStatus').textContent = error.message;
+        offlineMessage(error.message);
     });
 const invite = new URLSearchParams(location.search).get('room');
 if (invite) $('code').value = invite;
@@ -894,7 +924,14 @@ let lastWorld = '';
 try {
     lastWorld = localStorage.getItem('lorescape-last-world-v1') || '';
 } catch {}
-refreshWorlds(lastWorld).catch(error => notice(error.message, true));
+const worldsReady = refreshWorlds(lastWorld);
+worldsReady.catch(error => notice(error.message, true));
+if (new URLSearchParams(location.search).get('install') === '1') {
+    const url = new URL(location.href);
+    url.searchParams.delete('install');
+    history.replaceState(null, '', url);
+    $('installOffline').click();
+}
 
 let installPrompt = null;
 window.addEventListener('beforeinstallprompt', event => {

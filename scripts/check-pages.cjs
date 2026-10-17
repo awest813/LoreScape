@@ -34,3 +34,18 @@ assert(kit.includes(Buffer.from('LoreScape-local-server/setup.cjs')));
 assert(kit.includes(Buffer.from('LoreScape-local-server/client/index.html')));
 assert(!kit.includes(Buffer.from('private.pem')), 'A setup download must never include private keys');
 console.log(`Pages validation passed: ${pages.length} entry points, relative assets, manifest, and WebAssembly.`);
+
+const offlineDirectory = path.join(root, 'offline');
+if (process.argv.includes('--offline')) assert(fs.existsSync(offlineDirectory), 'Pages deployment requires the complete offline package');
+if (fs.existsSync(offlineDirectory)) {
+    const offlineHtml = fs.readFileSync(path.join(offlineDirectory, 'coop.html'), 'utf8');
+    assert.match(offlineHtml, /id="installOffline"/);
+    assert(!/(?:src|href)="\//.test(offlineHtml), 'Offline launcher assets must support project subdirectories');
+    const offlineManifest = JSON.parse(fs.readFileSync(path.join(offlineDirectory, 'manifest.json'), 'utf8'));
+    assert.equal(offlineManifest.scope, './');
+    assert.equal(offlineManifest.start_url, './coop.html');
+    import('../tools/verify-web.mjs').then(({verifyWebBuild}) => {
+        const result = verifyWebBuild(offlineDirectory);
+        console.log(`Offline Pages package verified: ${result.assets} assets, ${(result.bytes / 1048576).toFixed(1)} MiB.`);
+    }).catch(error => { console.error(error); process.exitCode = 1; });
+}

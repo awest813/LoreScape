@@ -273,7 +273,7 @@ async function start(message, role, data) {
     $('saveStatus').classList.remove('error');
     $('save').disabled = true;
     $('applySettings').disabled = true;
-    $('game').src = `/?world=${role === 'host' ? 999 : 998}&detail=${preferences.detail}&method=0&coop=1`;
+    $('game').src = `index.html?world=${role === 'host' ? 999 : 998}&detail=${preferences.detail}&method=0&coop=1`;
     resizeGame();
     notice(role === 'host' ? 'Starting your saved world…' : 'Joining the host…');
 }

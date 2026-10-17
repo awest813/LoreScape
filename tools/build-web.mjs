@@ -4,9 +4,10 @@ import path from 'node:path';
 import {root, serverDir} from './coop-config.mjs';
 import {verifyWebBuild} from './verify-web.mjs';
 
-const mode = process.argv.includes('--solo') ? 'solo' : 'coop';
+const pages = process.argv.includes('--pages');
+const mode = pages || process.argv.includes('--solo') ? 'solo' : 'coop';
 const staging = path.join(root, '.local', `web-build-${process.pid}`);
-const output = path.join(root, 'dist');
+const output = path.join(root, pages ? 'public/offline' : 'dist');
 function run(args, env = {}) {
     const result = spawnSync(process.execPath, args, {cwd: root, stdio: 'inherit', env: {...process.env, ...env}});
     if (result.error) throw result.error;
@@ -44,7 +45,7 @@ try {
     try { renameSync(staging, output); }
     catch (error) { if (existsSync(previous)) renameSync(previous, output); throw error; }
     rmSync(previous, {recursive: true, force: true});
-    console.log(`Web package ready: dist (${mode}, ${report.assets} checked assets, ${(report.bytes / 1048576).toFixed(1)} MiB). Run npm start.`);
+    console.log(`Web package ready: ${path.relative(root, output)} (${mode}, ${report.assets} checked assets, ${(report.bytes / 1048576).toFixed(1)} MiB). ${pages ? 'Serve public/ with your Pages host.' : 'Run npm start.'}`);
 } finally {
     rmSync(staging, {recursive: true, force: true});
 }

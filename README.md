@@ -2,7 +2,10 @@
 
 A browser client and collection of cache tools based on the [2004Scape TypeScript client](https://github.com/2004scape/Client2), a source port of the 2004 client refactor.
 
-The launcher provides a live world directory with free/member filters, remembered world and graphics choices, a toolkit, and connection guidance. The game client loads only when you select **Enter world**. Existing `?world=…&detail=…` links still launch directly. A separate client view provides fullscreen, loading progress, recovery messages, and a route back to the launcher. Game files and live worlds come from the 2004Scape services. **GitHub Pages hosts only the website; it does not run a game server.** Availability, account requirements, membership, and cross-origin access are controlled by the selected server.
+The launcher provides a live world directory with free/member filters, remembered world and graphics choices, a toolkit, and connection guidance. The game client loads only when you select **Enter world**. Existing `?world=…&detail=…` links still launch directly. A separate client view provides fullscreen, loading progress, recovery messages, and a route back to the launcher. Game files and live worlds come from the 2004Scape services. **Public worlds use separate servers. The offline solo option runs its own private game simulation inside your browser.** Availability, account requirements, membership, and cross-origin access are controlled by the selected server.
+
+Choose **Install cache & play offline** on the launcher for a complete private game. The first connected download is about 28 MiB; it includes the client, game data and browser server workers. Installation verifies every file, then opens the first saved local character (or creates `adventurer`). Bookmark the offline launcher. On later visits, **Play offline** resumes your saved world with no account or external server. Public-world characters are separate. Browser storage and service workers must be allowed; export backups before clearing site data. Installing an app shortcut is optional.
+
 
 ## Develop locally
 
@@ -28,7 +31,7 @@ Open **Local & browser worlds** to select one of these modes:
 | Mode | Requirements |
 | --- | --- |
 | Local server (0) | A separately running compatible revision 225 server. Set **Server web address** to its HTTP/HTTPS origin and web port (default `http://localhost:8888`; use `http://localhost` for port 80). |
-| Host in browser (999) | A compatible `worker.js` ES module and its dependencies beside `index.html`, plus matching `data/pack/client/` game data. These server bundles are **not included** in this repository or a normal Pages build. |
+| Host in browser (999) | A compatible `worker.js` ES module and its dependencies beside `index.html`, plus matching `data/pack/client/` game data. External clipboard-mode bundles must be supplied separately. The Pages offline solo package is installed through **Install cache & play offline**. |
 | Join a host (998) | Matching `data/pack/client/` game data on this website, WebRTC support, and a running browser host. |
 
 For an HTTP local server, run `npm run dev` and open `http://localhost:8080/`. HTTPS Pages requires an HTTPS/WSS server with a trusted certificate. The server must allow downloads from the launcher origin (CORS), accept WebSocket connections from it, and use RSA keys compatible with this client. The launcher tries WebSockets on the configured web port first, then the legacy port 43595. The server address is remembered on this device. Pending local checks can be cancelled; changing the world, address, or graphics cancels the old check before it can launch. A direct link looks like `?world=0&local=http%3A%2F%2Flocalhost%3A8888&detail=low`.
@@ -69,7 +72,7 @@ The build compiles the Bzip2 WebAssembly module and writes the website to `publi
 
 To preview production locally, run `npm run preview` after building. To test the exact generated files with any static HTTP server, serve `public/`; do not open the HTML using `file://`.
 
-`public/` is generated and ignored by Git. Save source edits in `src/`. Optional server bundles/data placed in `public/` must be supplied separately in every deployment; never publish player saves or credentials.
+`public/` is generated and ignored by Git. Save source edits in `src/`. The Pages workflow builds the pinned solo server package into `public/offline/` on every deployment; external clipboard-mode bundles still need separate provisioning; never publish player saves or credentials.
 
 ## Audit limits
 
@@ -107,7 +110,7 @@ Click or Tab to the canvas to use the keyboard. In model/cache viewers, use arro
 - If loading fails, check your connection, use **Reload and retry**, or choose another world. World-list requests have a 10-second timeout and at most three attempts. File downloads time out after 30 seconds; archive requests also have bounded retries.
 - Live world services must support HTTPS and permit requests from the deployed site's origin. The website cannot override a server's CORS settings or host a WebSocket server on Pages.
 - Cache tools that download game files need the same services. Cache viewer and JagEd let you load cache files from your computer. Some tool data also comes from the upstream server repository on GitHub.
-- The manifest provides app metadata; it does not provide offline game data or a service worker. A normal deployment requires network access.
+- The main manifest provides app metadata. The separate `offline/` package has its own scoped service worker and verified game-data download; public worlds still require network access.
 - If a deployment fails, inspect the first failing Actions step. Asset checks detect missing files, invalid Bzip2 WebAssembly, and root-relative asset paths that would break project hosting.
 
 ## Attribution
@@ -133,4 +136,8 @@ The development workspace used for this update blocks outbound access to `2004sc
 
 ## Private co-op and offline hosting
 
-The merged co-op tools provide room codes, up to four players, automatic saves, portable backups, and complete offline game packages. See [co-op setup](docs/COOP-SETUP.md) and [web hosting](docs/WEB-HOSTING.md). Run `npm run setup:coop` then `npm run coop` for a local browser-hosted room, or `npm run setup:web` then `npm start` for a production package. These commands fetch and build a separate server; the regular GitHub Pages build continues to serve the launcher and cache tools. Offline play requires the complete hosting package and an initial successful download.
+The merged co-op tools provide room codes, up to four players, automatic saves, portable backups, and complete offline game packages. See [co-op setup](docs/COOP-SETUP.md) and [web hosting](docs/WEB-HOSTING.md). Run `npm run setup:coop` then `npm run coop` for a local browser-hosted room, or `npm run setup:web` then `npm start` for a production package. These commands fetch and build a separate server; the GitHub Pages workflow additionally builds the solo package at `offline/`. Offline play requires an initial successful installation.
+
+To reproduce the complete Pages deployment locally, run `npm run setup:server`, `npm run build`, then `npm run build:offline`. The last command writes only `public/offline/` and preserves the main launcher. Run `npm run check:pages -- --offline` and `npm run test:install-offline` (set `LORESCAPE_CHROMIUM_PATH` if using a system Chromium). The browser check clicks the main install link, verifies automatic character entry and saving, stops its static server, and checks the bookmarked launcher, gameplay and saving offline under `/LoreScape/offline/`.
+
+The downloaded native kit forwards its offline-install link to the complete hosted solo package; the first installation needs access to that site. Its browser saves remain separate from the native server player files.

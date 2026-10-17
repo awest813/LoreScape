@@ -1,15 +1,24 @@
 export async function offlineAction(type, progress = () => {}, signal) {
     if (!isSecureContext || !('serviceWorker' in navigator)) throw new Error('Offline play requires HTTPS or localhost and service worker support');
-    signal?.throwIfAborted();
-    const existing = await navigator.serviceWorker.getRegistration('/');
-    if (existing) existing.update().catch(() => {});
-    else await navigator.serviceWorker.register('/offline-sw.js');
-    let startupTimer;
-    const registration = await Promise.race([
-        navigator.serviceWorker.ready,
-        new Promise((_, reject) => { startupTimer = setTimeout(() => reject(new Error('Offline setup timed out. Reload and try again.')), 30000); })
-    ]).finally(() => clearTimeout(startupTimer));
-    signal?.throwIfAborted();
+    if (signal?.aborted) throw signal.reason || new Error('Offline download cancelled');
+    const base = new URL('../', import.meta.url);
+    const existing = await navigator.serviceWorker.getRegistration(base);
+    const registration = existing?.scope === base.href ? existing : await navigator.serviceWorker.register(new URL('offline-sw.js', base), {scope: base.pathname});
+    registration.update().catch(() => {});
+    if (!registration.active) await new Promise((resolve, reject) => {
+        const interval = setInterval(() => {
+            if (registration.active || signal?.aborted) {
+                clearInterval(interval);
+                clearTimeout(timer);
+                signal?.aborted ? reject(signal.reason || new Error('Offline download cancelled')) : resolve();
+            }
+        }, 100);
+        const timer = setTimeout(() => {
+            clearInterval(interval);
+            reject(new Error('Offline setup timed out. Reload and try again.'));
+        }, 30000);
+    });
+    if (signal?.aborted) throw signal.reason || new Error('Offline download cancelled');
     if (!registration.active) throw new Error('Offline setup is not ready. Reload and try again.');
     return new Promise((resolve, reject) => {
         const channel = new MessageChannel();

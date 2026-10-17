@@ -20,7 +20,7 @@ Connection choices:
 
 ## Single-player offline and Chromebook settings
 
-Connect once and use **Download offline game** in the lobby. The pack contains the client, authoritative server workers, both client/server game data, WebAssembly and the upstream offline RSA material. Each file is checked against SHA-256 before an atomic cache switch. Downloading is bounded to four requests at a time; a failed update keeps the last complete pack. The current development pack is about 29 MiB, separate from character saves.
+For the Pages solo launcher, choose **Install cache & play offline** once; it downloads the full game and enters your local character automatically. Bookmark the offline launcher, then use **Play offline** to resume. For the co-op lobby or a download-only update, connect once and use **Download offline game**. The pack contains the client, authoritative server workers, both client/server game data, WebAssembly and the upstream offline RSA material. Each file is checked against SHA-256 before an atomic cache switch. Downloading is bounded to four requests at a time; a failed update keeps the last complete pack. The current development pack is about 29 MiB, separate from character saves.
 
 After **Offline ready**, reopen the same site's `/coop.html` and choose **Play solo**. The original server can be stopped and the network disconnected. No signaling, STUN, TURN or multiplayer service is contacted for solo play. Use the same browser profile and origin (including port); a different address has different browser storage. Offline files must have been downloaded before losing connectivity. Guest/co-op sessions still require the room service.
 

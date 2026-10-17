@@ -175,3 +175,11 @@ test('untrusted Host headers cannot become a setup server address', async (): Pr
         });
     }
 });
+
+test('downloaded kit sends offline installation to the complete hosted package', async (): Promise<void> => {
+    for (const install of ['', '?install=1']) {
+        const response: Response = await fetch(address + '/offline/coop.html' + install, {redirect: 'manual'});
+        expect(response.status).toBe(302);
+        expect(response.headers.get('location')).toBe('https://awest813.github.io/LoreScape/offline/coop.html' + install);
+    }
+});

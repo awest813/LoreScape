@@ -12,6 +12,7 @@ export function createWebServer(directory) {
         try {
             const url = new URL(request.url, 'http://localhost');
             if (url.pathname === '/healthz') { response.writeHead(200, {'Content-Type': 'application/json'}).end(request.method === 'HEAD' ? undefined : '{"status":"ok"}'); return; }
+            if (url.pathname === '/coop/') { response.writeHead(302, {Location: '/coop.html' + url.search}).end(); return; }
             if (url.pathname === '/' && !url.searchParams.has('world')) { response.writeHead(302, {Location: '/coop.html'}).end(); return; }
             const route = ['/coop', '/coop/'].includes(url.pathname) ? '/coop.html' : url.pathname === '/' ? '/index.html' : url.pathname;
             const decoded = decodeURIComponent(route);

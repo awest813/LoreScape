@@ -72,6 +72,7 @@ import {setupManifest} from './manifest';
 
 // noinspection JSSuspiciousNameCombination
 class Game extends Client {
+    private offlineLoginAttempted: boolean = false;
     load = async (): Promise<void> => {
         if (this.alreadyStarted) {
             this.errorStarted = true;
@@ -656,6 +657,19 @@ class Game extends Client {
     };
 
     private updateTitleScreen = async (): Promise<void> => {
+        // Only the same-origin private solo lobby can request account-free entry.
+        const solo: boolean = Game.getParameter('offline') === '1' && Game.getParameter('coop') === '1' && (window.parent as Window & {LoreCoop?: {solo?: boolean}}).LoreCoop?.solo === true;
+        if (!this.offlineLoginAttempted && solo && this.workerReady && Game.getParameter('world') === '999' && Game.getParameter('coop') === '1' && Game.getParameter('offline') === '1') {
+            this.offlineLoginAttempted = true;
+            const character: string = Game.getParameter('character');
+            if (/^[a-z0-9_ ]{1,12}$/i.test(character)) {
+                this.username = character;
+                this.password = 'private';
+                this.titleScreenState = 2;
+                await this.login(this.username, this.password, false);
+                return;
+            }
+        }
         if (this.titleScreenState === 0) {
             let x: number = ((this.width / 2) | 0) - 80;
             let y: number = ((this.height / 2) | 0) + 20;

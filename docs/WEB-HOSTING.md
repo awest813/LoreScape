@@ -24,7 +24,7 @@ npm run setup:server
 npm run build:web:solo
 ```
 
-Upload the **contents** of `dist/` to an HTTPS static host at the domain root. This build uses the polished solo launcher from `src/solo/`; room controls are hidden. Saves and the simulation remain in the player's browser. No Node room service is required. `/` redirects to `/coop.html`; the query route `/?world=999` remains the game iframe. On hosts without extensionless HTML routing, use `/coop.html` directly. Configure `application/wasm` for `.wasm`, JavaScript MIME types for `.js`/`.mjs`, and avoid SPA fallback rewrites for missing asset URLs. Serve `offline-sw.js` and HTML with revalidation/no-cache rather than permanent caching. The app uses root-relative paths and does not support a subdirectory deployment.
+Upload the **contents** of `dist/` to an HTTPS static host at the domain root or a subdirectory. This build uses the polished solo launcher from `src/solo/`; room controls are hidden. Saves and the simulation remain in the player's browser. No Node room service is required. `index.html` redirects to the adjacent `coop.html`; the game iframe uses `index.html?world=999`. On hosts without extensionless HTML routing, use `/coop.html` directly. Configure `application/wasm` for `.wasm`, JavaScript MIME types for `.js`/`.mjs`, and avoid SPA fallback rewrites for missing asset URLs. Serve `offline-sw.js` and HTML with revalidation/no-cache rather than permanent caching. Solo assets, the app manifest and service-worker caches are scoped to the deployment directory. Separate installations on the same origin keep their offline file caches separate.
 
 You can test the same solo package with `npm start`; it serves the launcher aliases `/coop`, `/coop/` and `/coop.html`, and does not start a room service. The existing ChatGPT Site remains owner-private. Its solo launcher is mirrored in `src/solo/` for self-hosting; the shared storage/protocol modules come from `src/public/coop/`.
 
@@ -62,7 +62,7 @@ For an existing `dist/`, run `node tools/tests/browser-production.cjs` with `LOR
 
 ## Offline download and portable saves
 
-Open **Display, audio & offline settings** in the launcher, then **Download offline game** while connected. The verified game pack stays in that browser profile; progress shows a percentage, file count and downloaded size. Cancellation, failed verification and full storage retain the previous pack. End active games in every tab before updating or removing offline files. Offline game removal keeps character saves.
+In the solo launcher, **Install cache & play offline** downloads the complete package and enters a local character automatically. **Play offline** resumes it on later visits. For updates without starting play, open **Display, audio & offline settings**, then **Download offline game** while connected. The verified game pack stays in that browser profile; progress shows a percentage, file count and downloaded size. Cancellation, failed verification and full storage retain the previous pack. End active games in every tab before updating or removing offline files. Offline game removal keeps character saves.
 
 Export a world backup from the saved-world controls or during a session. Its filename includes the world name and UTC timestamp. Import the JSON backup on another browser/device to move your progress. Keep these files outside the browser: clearing browser data removes both local game downloads and local saves. A previously installed service worker updates through the browser lifecycle; close all LoreScape tabs and reopen after an app update to activate the newest download controls.
 
@@ -73,3 +73,9 @@ node tools/tests/browser-downloads.cjs
 ```
 
 Set `LORESCAPE_PLAYWRIGHT_PATH` and `LORESCAPE_CHROMIUM_PATH` when Playwright/Chromium are installed outside the normal module or browser paths. The check starts an isolated local server, downloads the entire pack, injects update/cancellation/storage faults, stops the server, logs into the offline world, saves a character, and validates exported backups and restore.
+
+## GitHub Pages launcher with one-click offline installation
+
+The deployment workflow prepares Java and the pinned server checkout, builds the normal launcher, then runs `npm run build:offline` to place the complete solo package under `public/offline/`. Pages serves these static assets; the game simulation runs on the user's device. The main install link opens `offline/coop.html?install=1`, installs and verifies the complete pack, then starts a local world and character. The query flag is removed so reopening the bookmark never silently starts another download.
+
+The workflow checks all offline assets and runs `test:install-offline` in Chromium before publishing. No player saves or runtime state are bundled. The bundled upstream offline-mode RSA material is needed by the browser's private engine; it is independent of production server keys.
