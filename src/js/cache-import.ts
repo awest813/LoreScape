@@ -62,7 +62,13 @@ export function setupCacheImport(cache: CacheWriter | null, refresh: () => Promi
                 `Imported ${count} cache ${count === 1 ? 'file' : 'files'}.${incomplete ? ' Add the remaining cache files, or open a complete classic cache ZIP.' : ''}${cache?.persistent === false ? ' Available in this tab only; reopen the cache after reloading.' : ''}`
             );
         } catch (error) {
-            setPageStatus(error instanceof Error ? error.message : 'Unable to import this cache.', true, {label: 'Choose another cache', action: (): void => input.click()});
+            setPageStatus(error instanceof Error ? error.message : 'Unable to import this cache.', true, {
+                label: 'Choose another cache',
+                action: (): void => {
+                    input.focus();
+                    input.click();
+                }
+            });
         } finally {
             importing = false;
             for (const control of inputs) {
