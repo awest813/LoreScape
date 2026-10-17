@@ -6,6 +6,14 @@ The launcher provides a live world directory with free/member filters, remembere
 
 ## Develop locally
 
+For a downloadable launcher **and game server**, use [Local server setup](https://awest813.github.io/LoreScape/local-setup.html). Extract the ZIP, run `node setup.cjs`, then `node start.cjs`; open `http://127.0.0.1:8080/` after the server reports ready. Requires Node.js 22.22.1+, Git, Java 17+ and internet during initial setup. This installs pinned upstream server revision `647886c42f8a22c0f18e5dbe79c2697f052f8d2e` using a tested dependency lockfile, generates a private installation key, and proxies the launcher/files/WebSocket through one browser origin. The server is a private development world with automatic saves and no account authentication; use throwaway credentials. Setup preserves existing settings and saves. Native package installation may require build tools.
+
+**Managed Chromebooks without Linux support cannot install that server.** Use a permitted public world, or host the kit on another computer behind HTTPS and open its hosted launcher on the Chromebook. The [Chromebook guide](https://awest813.github.io/LoreScape/local-setup.html#chromebook) and ZIP README include a Caddy example. Cache viewer/JagEd remain browser tools: open a classic cache ZIP or extracted folder without installing a server, subject to device policies. No software here can override an administrator's website, WebSocket, download or file-import restrictions.
+
+`npm run build` generates `public/lorescape-local-server.zip` from the current emitted assets and `scripts/local-server/`. The ZIP includes the built client and installer, not a preinstalled/offline backend. `node setup.cjs` retrieves the upstream MIT-licensed source from GitHub, restricts its web/management/TCP listeners to loopback, and installs its dependencies. For a production community server, configure upstream authenticated accounts; do not publicly expose the kit's development backend or private files.
+
+The kit pins bcrypt 6.0.0 and Kysely 0.28.17 to remove the legacy native installer/tar chain and SQL-builder advisories. The October 17, 2026 production dependency audit still reports one unpatched high-severity node-forge signature-verification advisory (GHSA-86w9-cpqp-85rv). The server's node-forge calls parse keys and perform RSA arithmetic, rather than verifying signatures; the dependency advisory remains documented in the setup guide and ZIP README. This private development kit is not a hardened public account service.
+
 Use Node.js 22.22.1 or newer (`nvm use` selects the latest Node 22 release):
 
 ```sh

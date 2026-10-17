@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Local server setup &amp; Chromebook options · LoreScape</title>
+<style>body{margin:0;background:#101b18;color:#edf0e4;font:16px/1.65 system-ui,sans-serif}main{max-width:760px;margin:auto;padding:28px 20px 60px}a{color:#e8cc8e}h1,h2{line-height:1.25}h2{margin-top:2em}li{margin:10px 0}code,pre{background:#23342c;padding:3px 6px;border-radius:3px}pre{padding:16px;overflow:auto}p,li{overflow-wrap:anywhere}.download{display:inline-block;border:1px solid #e8cc8e;padding:10px 16px;border-radius:6px}a:focus-visible{outline:3px solid #e8cc8e;outline-offset:4px}</style></head>
+<body><main><a href="index.html">← Back to launcher</a>
+<h1>Your own world, from download to login</h1>
+<p>The setup kit installs and starts a compatible revision 225 game server and serves the LoreScape launcher with it. GitHub Pages serves this download; your computer runs the world.</p>
+<p><a class="download" href="lorescape-local-server.zip" download>Download local server setup (.zip)</a></p>
+<h2>Install on Windows, macOS or Linux</h2>
+<ol><li>Install <a href="https://nodejs.org/en/download">Node.js 22.22.1 or newer</a>, <a href="https://git-scm.com/downloads">Git</a>, and <a href="https://adoptium.net/temurin/releases/?version=17">Java 17 or newer</a>. Linux may also need Python 3, make and a C++ compiler for native packages.</li>
+<li>Extract the entire ZIP into a writable folder. Open a terminal in that extracted folder.</li>
+<li>Run <code>node setup.cjs</code>. Keep internet connected: it downloads the pinned <a href="https://github.com/2004scape/Server">2004Scape server</a> and its dependencies.</li>
+<li>When setup finishes, run <code>node start.cjs</code>. The first launch packs game data and may take several minutes. Wait for <strong>World ready</strong>.</li>
+<li>Open <a href="http://127.0.0.1:8080/">http://127.0.0.1:8080/</a> on that computer. Keep the terminal open while playing. Select <strong>Existing user</strong>; a new name creates a save in this development world. Use a throwaway password: this private mode has no account authentication.</li></ol>
+<p>Next time, run <code>node start.cjs</code>. Stop with Ctrl+C. Saves are in <code>server/data/players/</code>; back them up before reinstalling. Setup preserves existing saves, settings and installation keys.</p>
+<h2 id="chromebook">Locked-down Chromebook options</h2>
+<p><strong>Without Linux support, a managed Chromebook cannot install this game server.</strong> Downloading a cache or opening the ZIP will not start a world. These options use Chrome without an extension:</p>
+<ul><li><strong>Play a public world:</strong> return to the launcher, choose an available world and use low detail for a lighter client. The world’s services must be online and permitted by your administrator.</li>
+<li><strong>Use a hosted world:</strong> run the kit on another computer or server and open its HTTPS launcher URL on the Chromebook. A host can follow the instructions below. Your Chromebook needs no local server or software installation.</li>
+<li><strong>Use the cache tools:</strong> choose Download cache for tools in the launcher, then open that ZIP in Cache viewer or JagEd. Extracted folders work too. Downloads, file imports and browser storage must be permitted; if storage is cleared, select the ZIP again.</li></ul>
+<p>A school or workplace may block game sites or WebSocket connections. Ask the administrator to allow the host. This setup does not change or bypass device policies.</p>
+<h2>Host for another device</h2>
+<p>On the server computer, give the launcher a trusted HTTPS address. For example, install Caddy on the same host, point your domain at it, and use this Caddyfile:</p>
+<pre>play.example.com {
+    reverse_proxy 127.0.0.1:8080
+}</pre>
+<p>Set the public address before starting the kit. macOS/Linux:</p>
+<pre>LORESCAPE_PUBLIC_ORIGIN=https://play.example.com node start.cjs</pre>
+<p>Windows PowerShell:</p>
+<pre>$env:LORESCAPE_PUBLIC_ORIGIN='https://play.example.com'
+node start.cjs</pre>
+<p>Open <code>https://play.example.com/</code> on the Chromebook. The root link selects the server address and its login key automatically. The proxy forwards both files and WebSockets on the same origin. Keep the generated <code>setup=1</code> parameter when sharing the launcher link.</p>
+<p>The installer restricts backend ports 8888, 8898 and 43594 to loopback. The kit’s gateway also listens on loopback port 8080 by default. Keep those ports private. Share access only with people you trust: this is a private development world. For public community accounts, use the upstream authenticated production setup. Never publish the server folder, private keys, settings or saves.</p>
+<h2>If setup stops</h2>
+<ul><li><strong>Missing prerequisite / install failure:</strong> read the first terminal error, install the missing program or build tools, then retry <code>node setup.cjs</code>.</li>
+<li><strong>Port in use:</strong> stop the old server or other program using the named port.</li>
+<li><strong>503 or missing game files:</strong> wait for World ready and check the server terminal for errors.</li>
+<li><strong>Login out of date:</strong> reopen the root address printed by start.cjs. It supplies the matching installation key.</li></ul>
+<p>The kit uses archived upstream revision <code>647886c42f8a22c0f18e5dbe79c2697f052f8d2e</code> and includes a tested dependency lockfile for reproducible installation. Package availability and platform support can affect setup. Its MIT license is included in the downloaded server source. Full instructions are also in the ZIP’s README.txt.</p>
+<p>The kit updates bcrypt and Kysely to remove known installer and SQL-builder advisories. One upstream node-forge signature-verification advisory has no published fix as of October 17, 2026. The local server uses RSA key parsing/arithmetic rather than signature verification; this remains a dependency limitation. See the ZIP README for details.</p>
+</main></body></html>

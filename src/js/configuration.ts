@@ -2,6 +2,7 @@ import GameShell from './jagex2/client/GameShell';
 import {Client} from './client';
 import {getWorldInfo, WorldInfo} from './worldlist';
 import {DEFAULT_LOCAL_ADDRESS, localWorldAddresses, worldAddresses} from './connection';
+import {parseSetupKey} from './setup-key';
 
 export async function setupConfiguration(): Promise<void> {
     await world();
@@ -15,7 +16,7 @@ async function world(): Promise<void> {
         GameShell.setParameter('world', '1');
     }
     if (['0', '998', '999'].includes(GameShell.getParameter('world'))) {
-        localConfiguration();
+        await localConfiguration();
     } else {
         await liveConfiguration(window.location.protocol.startsWith('https'));
     }
@@ -42,7 +43,7 @@ function method(): void {
 
 // ---
 
-function localConfiguration(): void {
+async function localConfiguration(): Promise<void> {
     if (+GameShell.getParameter('world') >= 998) {
         Client.httpAddress = 'data/pack/client';
         return;
@@ -53,6 +54,13 @@ function localConfiguration(): void {
     Client.httpAddress = addresses.files;
     Client.webSocketAddresses = addresses.sockets;
     Client.portOffset = 0;
+    if (GameShell.getParameter('setup') === '1') {
+        if (addresses.files !== window.location.origin) throw new Error('Open the setup kit launcher on the same address as its game server.');
+        const response: Response = await fetch('/lorescape-server.json', {signal: AbortSignal.timeout(10000), cache: 'no-store'});
+        if (!response.ok) throw new Error('Setup kit login configuration is unavailable. Restart node start.cjs and open its launcher link.');
+        Client.modulus = parseSetupKey(await response.json());
+        Client.exponent = 65537n;
+    }
 }
 
 async function liveConfiguration(secured: boolean): Promise<void> {

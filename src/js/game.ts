@@ -664,7 +664,12 @@ class Game extends Client {
                     return;
                 }
 
-                this.titleScreenState = 3;
+                const setupWorld: boolean = Game.getParameter('world') === '0' && Game.getParameter('setup') === '1';
+                this.titleScreenState = setupWorld ? 2 : 3;
+                if (setupWorld) {
+                    this.loginMessage0 = '';
+                    this.loginMessage1 = 'Choose a name and a throwaway password.';
+                }
                 this.titleLoginField = 0;
             }
 

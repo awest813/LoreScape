@@ -25,4 +25,12 @@ for (const icon of manifest.icons) {
 }
 assert(fs.existsSync(path.join(root, '.nojekyll')));
 assert(WebAssembly.validate(fs.readFileSync(path.join(root, 'bz2.wasm'))));
+const setup = fs.readFileSync(path.join(root, 'local-setup.html'), 'utf8');
+assert.match(setup, /id="chromebook"/);
+assert.match(setup, /lorescape-local-server\.zip/);
+const kit = fs.readFileSync(path.join(root, 'lorescape-local-server.zip'));
+assert.equal(kit.readUInt32LE(), 0x04034b50, 'Local setup download must be a ZIP');
+assert(kit.includes(Buffer.from('LoreScape-local-server/setup.cjs')));
+assert(kit.includes(Buffer.from('LoreScape-local-server/client/index.html')));
+assert(!kit.includes(Buffer.from('private.pem')), 'A setup download must never include private keys');
 console.log(`Pages validation passed: ${pages.length} entry points, relative assets, manifest, and WebAssembly.`);

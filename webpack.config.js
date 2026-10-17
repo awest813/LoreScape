@@ -44,7 +44,15 @@ const config = {
         }),
         new CopyPlugin({
             patterns: [{from: path.resolve(__dirname, 'src', 'public')}, {from: path.resolve(__dirname, 'src', 'js', 'vendor', 'bz2.wasm')}]
-        })
+        }),
+        {
+            apply(compiler) {
+                if (!isProduction) return;
+                compiler.hooks.afterEmit.tap('LocalServerKit', compilation => {
+                    require('./scripts/build-local-kit.cjs').buildKit(Object.keys(compilation.assets));
+                });
+            }
+        }
     ],
 
     output: {
