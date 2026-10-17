@@ -26,20 +26,42 @@ header.innerHTML = `
     <nav class="lore-nav" aria-label="Main navigation">${pages.map(([path, title]): string => `<a href="${path}.html" ${path === pageName ? 'aria-current="page"' : ''}>${title}</a>`).join('')}</nav>
 `;
 document.body.prepend(header);
+const skip: HTMLAnchorElement = header.querySelector<HTMLAnchorElement>('.lore-skip')!;
+const skipTargets: Record<string, string> = {items: 'items', sounds: 'sounds', viewer: 'mainPanel', JagEd: 'mainPanel', mesanim: 'chat'};
+if (skipTargets[pageName]) {
+    skip.href = `#${skipTargets[pageName]}`;
+    skip.textContent = 'Skip to tool';
+}
+skip.addEventListener('click', (event: MouseEvent): void => {
+    const root: HTMLElement | null = document.getElementById(skip.hash.slice(1));
+    if (!root) return;
+    const target: HTMLElement = root.querySelector<HTMLElement>('input[type="search"]:not(:disabled)') || root.querySelector<HTMLElement>('input:not(:disabled), button:not(:disabled), canvas') || root;
+    if (!target.matches('input, button, canvas, a, select, textarea')) target.tabIndex = -1;
+    event.preventDefault();
+    target.focus({preventScroll: true});
+    target.scrollIntoView({block: 'center'});
+});
 const status: HTMLElement = document.createElement('section');
 status.className = 'lore-status';
 status.setAttribute('aria-label', 'Client status');
 status.innerHTML = '<p id="lore-status-message" role="status" aria-live="polite">Connecting to the world service…</p><button type="button" id="lore-retry" hidden>Reload and retry</button>';
 header.after(status);
-document.getElementById('lore-retry')?.addEventListener('click', (): void => window.location.reload());
+type RetryAction = {label: string; action: () => void};
+const reload: () => void = (): void => window.location.reload();
+let retryAction: () => void = reload;
+document.getElementById('lore-retry')?.addEventListener('click', (): void => retryAction());
 
-export function setPageStatus(message: string, failed: boolean = false): void {
+export function setPageStatus(message: string, failed: boolean = false, retryActionOverride?: RetryAction): void {
     const text: HTMLElement | null = document.getElementById('lore-status-message');
     if (text) text.textContent = message;
     status.classList.toggle('lore-status-error', failed);
     window.dispatchEvent(new CustomEvent('lore:status', {detail: {message, failed}}));
     const retry: HTMLElement | null = document.getElementById('lore-retry');
-    if (retry) retry.hidden = !failed;
+    retryAction = retryActionOverride?.action || reload;
+    if (retry) {
+        retry.hidden = !failed;
+        retry.textContent = retryActionOverride?.label || 'Reload and retry';
+    }
 }
 
 export function showStartupError(error?: unknown): void {

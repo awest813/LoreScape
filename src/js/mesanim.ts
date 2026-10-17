@@ -1,3 +1,4 @@
+import {addListAction} from './tool-controls';
 import {loadClientChecksums} from './local-worlds';
 import {startClient} from './page-shell';
 import 'style/mesanim.scss';
@@ -235,7 +236,7 @@ class Mesanim extends Client {
         const search: HTMLInputElement = document.createElement('input');
         search.type = 'search';
         search.placeholder = 'Search';
-        search.tabIndex = 1;
+        search.setAttribute('aria-label', 'Search NPCs');
         search.oninput = (): void => {
             const filter: string = search.value.toLowerCase().replaceAll(' ', '_');
 
@@ -285,6 +286,7 @@ class Mesanim extends Client {
                 this.activeNpc = NpcType.get(id);
                 this.chatNpc(this.activeNpc, this.inputMesanimId, this.mes);
             };
+            addListAction(li);
             ul.appendChild(li);
         }
     }
@@ -300,7 +302,7 @@ class Mesanim extends Client {
         const search: HTMLInputElement = document.createElement('input');
         search.type = 'search';
         search.placeholder = 'Search';
-        search.tabIndex = 2;
+        search.setAttribute('aria-label', 'Search chat animations');
         search.oninput = (): void => {
             const filter: string = search.value.toLowerCase().replaceAll(' ', '_');
 
@@ -348,6 +350,7 @@ class Mesanim extends Client {
                 this.inputMesanimId = id;
                 this.exportChat();
             };
+            addListAction(li);
             ul.appendChild(li);
         }
     }

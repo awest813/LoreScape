@@ -1,3 +1,4 @@
+import {addListAction} from './tool-controls';
 import {loadClientChecksums} from './local-worlds';
 import {startClient} from './page-shell';
 import 'style/sounds.scss';
@@ -88,7 +89,7 @@ class Sounds extends Client {
         const search: HTMLInputElement = document.createElement('input');
         search.type = 'search';
         search.placeholder = 'Search';
-        search.tabIndex = 1;
+        search.setAttribute('aria-label', 'Search sounds');
         search.oninput = (): void => {
             const ul: HTMLUListElement | null = document.querySelector('#soundList');
             if (!ul) {
@@ -142,6 +143,7 @@ class Sounds extends Client {
 
                 await playWave(buf.data.slice(0, buf.pos), 128);
             };
+            addListAction(li);
             ul.appendChild(li);
         }
     }

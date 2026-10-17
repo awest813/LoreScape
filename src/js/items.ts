@@ -1,3 +1,4 @@
+import {addListAction} from './tool-controls';
 import {loadClientChecksums} from './local-worlds';
 import {startClient} from './page-shell';
 // noinspection JSSuspiciousNameCombination,DuplicatedCode
@@ -118,7 +119,7 @@ class Items extends Client {
         const command: HTMLInputElement = document.createElement('input');
         command.type = 'text';
         command.placeholder = '::give';
-        command.tabIndex = -1;
+        command.setAttribute('aria-label', 'Item command');
         items.appendChild(command);
 
         // todo: toggle cert_
@@ -126,7 +127,7 @@ class Items extends Client {
         const search: HTMLInputElement = document.createElement('input');
         search.type = 'search';
         search.placeholder = 'Search';
-        search.tabIndex = 1;
+        search.setAttribute('aria-label', 'Search items');
         search.oninput = (): void => {
             const ul: HTMLUListElement | null = document.querySelector('#itemList');
             if (!ul) {
@@ -222,6 +223,7 @@ class Items extends Client {
             icon.draw(0, 0);
             temp.draw(0, 0);
 
+            addListAction(li);
             ul.appendChild(li);
         }
     }

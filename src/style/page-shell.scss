@@ -53,4 +53,8 @@ canvas#canvas { max-width: 100%; height: auto; }
 
 .lore-outbound { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; vertical-align: middle; }
 
+button.lore-list-action { display: block; width: 100%; margin: 0; padding: 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: inherit; overflow-wrap: anywhere; cursor: pointer; }
+.lore-list-action > :last-child { margin-bottom: 0; }
+.lore-list-action:focus-visible { outline: 2px solid #e7c784; outline-offset: 5px; }
+
 .lore-file-picker input + label { margin-top: 14px; }

@@ -1,3 +1,4 @@
+import {addListAction} from './tool-controls';
 import {startClient} from './page-shell';
 import {setupCacheImport} from './cache-import';
 import {downloadUrl} from './jagex2/util/JsUtil';
@@ -178,6 +179,7 @@ class Viewer extends Client {
                     this.model.id = i;
                     this.loadModel(i);
                 };
+                addListAction(li);
                 ul.appendChild(li);
             }
         }
