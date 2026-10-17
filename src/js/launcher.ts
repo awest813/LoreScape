@@ -3,6 +3,7 @@ import {setPageStatus, showStartupError} from './page-shell';
 import {downloadText} from './jagex2/util/JsUtil';
 import {defaultPreferences, LauncherPreferences, parsePreferences, parseWorldChoices, validWorld} from './launcher-state';
 import type {WorldInfo} from './worldlist';
+import {WORLD_LIST_URL} from './connection';
 
 const storageKey: string = 'lorescape.launcher.v1';
 const form: HTMLFormElement = document.getElementById('launcher-form') as HTMLFormElement;
@@ -82,8 +83,7 @@ async function refreshWorlds(): Promise<void> {
     notice.hidden = true;
     document.getElementById('world-count')!.textContent = 'Fetching worlds…';
     try {
-        const protocol: string = window.location.protocol === 'https:' ? 'https:' : 'http:';
-        worlds = parseWorldChoices(JSON.parse(await downloadText(`${protocol}//2004scape.org/api/v1/worldlist`, 10000)));
+        worlds = parseWorldChoices(JSON.parse(await downloadText(WORLD_LIST_URL, 10000)));
         if (!worlds.length) throw new Error('No worlds returned.');
     } catch {
         notice.textContent = worlds.length ? 'The directory could not be refreshed. Showing the last fetched list.' : 'World directory unavailable. Refresh to retry, or connect by world ID below.';

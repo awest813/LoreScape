@@ -55,6 +55,7 @@ export abstract class Client extends GameShell {
     static members: boolean = true;
     static lowMemory: boolean = false;
     static serverAddress: string = '';
+    static webSocketAddresses: string[] | undefined;
     static httpAddress: string = '';
     static showDebug: boolean = false;
     static chatEra: number = 2; // 0 - early beta, 1 - late beta, 2 - launch

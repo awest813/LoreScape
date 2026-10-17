@@ -1,6 +1,7 @@
 import GameShell from './jagex2/client/GameShell';
 import {Client} from './client';
 import {getWorldInfo, WorldInfo} from './worldlist';
+import {worldAddresses} from './connection';
 
 export async function setupConfiguration(): Promise<void> {
     await world();
@@ -56,16 +57,11 @@ function localConfiguration(): void {
 
 async function liveConfiguration(secured: boolean): Promise<void> {
     const world: WorldInfo = await getWorldInfo(secured, Number(GameShell.getParameter('world')));
-    const url: URL = new URL(world.address);
-
+    const addresses: {files: string; host: string; sockets: string[]} = worldAddresses(world.address, world.portOffset, secured, world.websocketAddress);
     Client.nodeId = 10 + world.id - 1;
-    // this way so we dont keep the port if address has one
-    Client.serverAddress = `${url.protocol}//${url.hostname}`;
-    Client.httpAddress = url.origin;
-    if (!secured) {
-        Client.serverAddress = Client.serverAddress.replace('https:', 'http:');
-        // Client.httpAddress = Client.httpAddress.replace('https:', 'http:'); world 3 and 4 have to use secured
-    }
+    Client.serverAddress = addresses.host;
+    Client.httpAddress = addresses.files;
+    Client.webSocketAddresses = addresses.sockets;
     Client.portOffset = world.portOffset;
     Client.members = world?.members === true;
     GameShell.setParameter('world', world.id.toString(10));

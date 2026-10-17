@@ -1,10 +1,11 @@
 import LinkList from '../datastruct/LinkList';
 import Linkable from '../datastruct/Linkable';
-import {sleep} from '../util/JsUtil';
+import {socketUrl, validateSocketUrl} from '../../connection';
 
 export type Socket = {
     host: string;
     port: number;
+    urls?: string[];
 };
 
 export default class ClientStream {
@@ -17,23 +18,45 @@ export default class ClientStream {
     private closed: boolean = false;
     private ioerror: boolean = false;
 
-    static openSocket = async (socket: Socket): Promise<WebSocket> => {
+    static openSocket = async (socket: Socket, timeoutMs: number = 10000): Promise<WebSocket> => {
+        const securePage: boolean = typeof window !== 'undefined' && window.location.protocol === 'https:';
+        const urls: string[] = socket.urls?.length ? socket.urls.map((url: string): string => validateSocketUrl(url, securePage)) : [socketUrl(socket, securePage)];
+        let lastError: unknown;
+        for (const url of urls) {
+            try {
+                return await ClientStream.connect(url, timeoutMs);
+            } catch (error) {
+                lastError = error;
+            }
+        }
+        throw lastError;
+    };
+
+    private static connect = async (url: string, timeoutMs: number): Promise<WebSocket> => {
         return await new Promise<WebSocket>((resolve, reject): void => {
-            const secured: boolean = socket.host.startsWith('https');
-            const protocol: string = secured ? 'wss' : 'ws';
-            const host: string = socket.host.substring(socket.host.indexOf('//') + 2);
-            const port: number = secured ? socket.port + 2 : socket.port + 1;
-            const ws: WebSocket = new WebSocket(`${protocol}://${host}:${port}`, 'binary');
-
-            ws.addEventListener('open', (): void => {
-                console.log('connection open!');
+            const ws: WebSocket = new WebSocket(url, 'binary');
+            ws.binaryType = 'arraybuffer';
+            const cleanup = (): void => {
+                clearTimeout(timeout);
+                ws.removeEventListener('open', opened);
+                ws.removeEventListener('error', failed);
+                ws.removeEventListener('close', closed);
+            };
+            const fail = (message: string): void => {
+                cleanup();
+                if (ws.readyState !== WebSocket.CLOSED) ws.close();
+                reject(new Error(message));
+            };
+            const opened = (): void => {
+                cleanup();
                 resolve(ws);
-            });
-
-            ws.addEventListener('error', (): void => {
-                console.log('connection error!');
-                reject(ws);
-            });
+            };
+            const failed = (): void => fail('Unable to open the game server connection.');
+            const closed = (): void => fail('The game server closed before the connection was ready.');
+            const timeout: ReturnType<typeof setTimeout> = setTimeout((): void => fail('The game server connection timed out.'), timeoutMs);
+            ws.addEventListener('open', opened);
+            ws.addEventListener('error', failed);
+            ws.addEventListener('close', closed);
         });
     };
 
@@ -46,11 +69,12 @@ export default class ClientStream {
     }
 
     get host(): string {
-        return this.socket.url.split('/')[2];
+        return new URL(this.socket.url).hostname;
     }
 
     get port(): number {
-        return parseInt(this.socket.url.split(':')[2], 10);
+        const url: URL = new URL(this.socket.url);
+        return Number(url.port || (url.protocol === 'wss:' ? 443 : 80));
     }
 
     get available(): number {
@@ -61,22 +85,42 @@ export default class ClientStream {
         this.wsout.write(src, len);
     }
 
-    async read(): Promise<number> {
-        return this.closed ? 0 : this.wsin.fastByte() ?? (await this.wsin.slowByte());
+    private async withDeadline<T>(operation: () => Promise<T>, timeoutMs: number): Promise<T> {
+        if (timeoutMs <= 0) return operation();
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+        try {
+            return await Promise.race([
+                operation(),
+                new Promise<never>((_resolve, reject): void => {
+                    timeout = setTimeout((): void => {
+                        this.close();
+                        reject(new Error('Timed out waiting for a response from the game server.'));
+                    }, timeoutMs);
+                })
+            ]);
+        } finally {
+            if (timeout !== undefined) clearTimeout(timeout);
+        }
     }
 
-    async readBytes(dst: Uint8Array, off: number, len: number): Promise<void> {
-        if (this.closed) {
-            return;
-        }
-        while (len > 0) {
-            const read: Uint8Array = this.wsin.fastBytes(dst, off, len) ?? (await this.wsin.slowBytes(dst, off, len));
-            if (read.length <= 0) {
-                throw new Error('EOF');
+    async read(timeoutMs: number = 0): Promise<number> {
+        return this.withDeadline(async (): Promise<number> => {
+            if (this.closed) throw new Error('Game server connection is closed.');
+            return this.wsin.fastByte() ?? (await this.wsin.slowByte());
+        }, timeoutMs);
+    }
+
+    async readBytes(dst: Uint8Array, off: number, len: number, timeoutMs: number = 0): Promise<void> {
+        return this.withDeadline(async (): Promise<void> => {
+            if (this.closed) throw new Error('Game server connection is closed.');
+            if (off < 0 || len < 0 || off + len > dst.length) throw new Error('Invalid read buffer range.');
+            while (len > 0) {
+                const read: Uint8Array = this.wsin.fastBytes(dst, off, len) ?? (await this.wsin.slowBytes(dst, off, len));
+                if (read.length <= 0) throw new Error('EOF');
+                off += read.length;
+                len -= read.length;
             }
-            off += read.length;
-            len -= read.length;
-        }
+        }, timeoutMs);
     }
 
     close(): void {
@@ -187,9 +231,7 @@ class WebSocketReader {
     }
 
     private onmessage = (e: MessageEvent): void => {
-        if (this.closed) {
-            throw new Error('WebSocketReader is closed!');
-        }
+        if (this.closed) return;
         const event: WebSocketEvent = new WebSocketEvent(new Uint8Array(e.data));
         if (this.event) {
             this.queue.addTail(event);
@@ -215,19 +257,17 @@ class WebSocketReader {
         return null;
     }
 
-    private async readSlowByte(len: number): Promise<number> {
-        this.event = this.queue.removeHead() as WebSocketEvent | null;
-        while (this.total < len) {
-            await Promise.race([
-                new Promise((resolve): ((value: PromiseLike<((data: WebSocketEvent | null) => void) | null>) => void) => (this.callback = resolve)),
-                sleep(2000).then((): void => {
-                    if (this.closed) {
-                        throw new Error('WebSocketReader closed while reading.');
-                    }
-                })
-            ]);
+    private async readSlowByte(): Promise<number> {
+        while (!this.closed) {
+            const byte: number | null = this.readFastByte();
+            if (byte !== null) return byte;
+            this.event = this.queue.removeHead() as WebSocketEvent | null;
+            if (this.event) continue;
+            await new Promise<void>((resolve): void => {
+                this.callback = (): void => resolve();
+            });
         }
-        return this.event ? this.event.read : this.readSlowByte(len);
+        throw new Error('WebSocketReader closed while reading.');
     }
 
     fastBytes(dst: Uint8Array, off: number, len: number): Uint8Array | null {
@@ -254,7 +294,7 @@ class WebSocketReader {
             throw new Error('WebSocketReader is closed!');
         }
         while (len > 0) {
-            dst[off++] = this.readFastByte() ?? (await this.readSlowByte(len));
+            dst[off++] = this.readFastByte() ?? (await this.readSlowByte());
             this.total--;
             len--;
         }
@@ -277,14 +317,16 @@ class WebSocketReader {
         if (this.closed) {
             throw new Error('WebSocketReader is closed!');
         }
-        const slow: number = await this.readSlowByte(1);
+        const slow: number = await this.readSlowByte();
         this.total--;
         return slow;
     }
 
     close(): void {
         this.closed = true;
+        const pending: ((data: WebSocketEvent | null) => void) | null = this.callback;
         this.callback = null;
+        pending?.(null);
         this.total = 0;
         this.event = null;
         this.queue.clear();

@@ -41,3 +41,9 @@ test('rejects malformed world-list responses with bounded retries', async (): Pr
     await expect(getWorldInfo(true, 1)).rejects.toThrow('unavailable');
     expect(downloadText).toHaveBeenCalledTimes(3);
 });
+
+test('uses the secure directory even when the launcher is served over local HTTP', async (): Promise<void> => {
+    jest.mocked(downloadText).mockResolvedValue(JSON.stringify([world]));
+    expect(await getWorldInfo(false, 1)).toEqual(world);
+    expect(downloadText).toHaveBeenCalledWith('https://2004scape.org/api/v1/worldlist', 10000);
+});

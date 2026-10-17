@@ -75,3 +75,20 @@ Click or Tab to the canvas to use the keyboard. In model/cache viewers, use arro
 ## Attribution
 
 Based on 2004Scape Client2 and its contributors. This is an independent community project, unaffiliated with Jagex. RuneScape is a trademark of Jagex Ltd. The original project identifies its client code as a TypeScript source port; retain upstream attribution and review rights for any game assets you distribute.
+
+
+## Verify a game server connection
+
+Run the transport check from a network that can reach the selected game server:
+
+```sh
+npm run check:server -- --world 1 --origin https://awest813.github.io
+```
+
+The check uses the same endpoint resolver as the client. It checks the world directory, CORS for the deployed site's origin, the 36-byte game-file CRC table, and a real binary WebSocket handshake. It honors HTTP/HTTPS proxy and NO_PROXY settings. It sends no account credentials or login packet. A successful transport check does not verify account authentication, the server's RSA key, or gameplay.
+
+For your own deployment, set `WORLD_LIST_URL` in `src/js/connection.ts` to your world directory, rebuild, and use `--directory https://your-server.example/worlds` when running the check. Each world needs `id`, `address`, `portOffset`, `region`, and `players`. An optional `websocketAddress` such as `wss://game.example/play` selects an explicit socket endpoint. Without it, the client tries WebSockets on the advertised web endpoint first, then the legacy game port (`43596 + portOffset` for WSS, `43595 + portOffset` for WS). HTTPS worlds remain secure in local previews; Pages refuses insecure game endpoints.
+
+Your backend must serve client revision 225 and matching game files and public RSA parameters, allow file downloads from the Pages origin via CORS, and accept that origin during WebSocket upgrades. The current Pages origin is `https://awest813.github.io`, without the `/LoreScape/` path. Current upstream servers can enforce `WEB_ALLOWED_ORIGIN` and deployment-cookie protection. A separately hosted client cannot bypass those checks; coordinate the backend configuration or co-host the client as required.
+
+The development workspace used for this update blocks outbound access to `2004scape.org`, so public-world availability could not be verified here. Actual WebSocket connections and seed exchange are covered against local test servers, including fragmented frames, early disconnects, endpoint fallback, CORS failures, and timeouts.

@@ -10,6 +10,7 @@
     "@types/foundation-sites": "^6.4.3",
     "@types/jest": "^30.0.0",
     "@types/jquery": "^3.5.29",
+    "@types/ws": "^8.18.2",
     "@typescript-eslint/eslint-plugin": "^8.71.2",
     "@typescript-eslint/parser": "^8.71.2",
     "assemblyscript": "^0.27.27",
@@ -18,6 +19,7 @@
     "css-loader": "^6.11.0",
     "eslint": "^8.57.0",
     "html-webpack-plugin": "^5.6.0",
+    "https-proxy-agent": "^7.0.6",
     "husky": "^9.0.11",
     "jest": "^30.5.2",
     "jest-environment-jsdom": "^30.5.2",
@@ -25,6 +27,7 @@
     "mini-css-extract-plugin": "^2.9.0",
     "postcss-loader": "^8.1.1",
     "prettier": "^3.2.5",
+    "proxy-from-env": "^1.1.0",
     "sass": "^1.105.2",
     "sass-loader": "^14.2.1",
     "style-loader": "^3.3.4",
@@ -35,7 +38,8 @@
     "webpack": "^5.91.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^6.0.0"
+    "webpack-dev-server": "^6.0.0",
+    "ws": "^8.22.0"
   },
   "scripts": {
     "build": "npm run asc && webpack --mode=production --node-env=production",
@@ -52,7 +56,8 @@
     "prod": "npm run build && npm run preview",
     "typecheck": "npm run asc && tsc --noEmit",
     "preview": "node scripts/preview.cjs",
-    "check:pages": "node scripts/check-pages.cjs"
+    "check:pages": "node scripts/check-pages.cjs",
+    "check:server": "node --experimental-strip-types scripts/check-server.cjs"
   },
   "repository": {
     "type": "git",

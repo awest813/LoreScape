@@ -1,3 +1,4 @@
+import {setPageStatus} from './page-shell';
 import {startClient} from './page-shell';
 import SeqType from './jagex2/config/SeqType';
 import LocType from './jagex2/config/LocType';
@@ -844,6 +845,7 @@ class Game extends Client {
             if (!reconnect) {
                 this.loginMessage0 = '';
                 this.loginMessage1 = 'Connecting to server...';
+                setPageStatus('Connecting to the game server...');
                 await this.drawTitleScreen();
             }
             if (Game.getParameter('world') === '998') {
@@ -864,11 +866,16 @@ class Game extends Client {
                 this.stream = new ClientStream(
                     await ClientStream.openSocket({
                         host: Client.serverAddress,
+                        urls: Client.webSocketAddresses,
                         port: 43594 + Client.portOffset
                     })
                 );
             }
-            await this.stream.readBytes(this.in.data, 0, 8);
+            if (this.stream instanceof ClientStream) {
+                await this.stream.readBytes(this.in.data, 0, 8, 10000);
+            } else {
+                await this.stream.readBytes(this.in.data, 0, 8);
+            }
             this.in.pos = 0;
             this.serverSeed = this.in.g8;
             const seed: Int32Array = new Int32Array([Math.floor(Math.random() * 99999999), Math.floor(Math.random() * 99999999), Number(this.serverSeed >> 32n), Number(this.serverSeed & BigInt(0xffffffff))]);
@@ -901,7 +908,14 @@ class Game extends Client {
             }
             this.randomIn = new Isaac(seed);
             this.stream?.write(this.loginout.data, this.loginout.pos);
-            const reply: number = await this.stream.read();
+            const reply: number = this.stream instanceof ClientStream ? await this.stream.read(10000) : await this.stream.read();
+            if (reply === 2 || reply === 18 || reply === 15) {
+                setPageStatus('Connected to the game server.');
+            } else {
+                this.stream.close();
+                this.stream = null;
+                setPageStatus('Game server reached. Check the login message in the client.');
+            }
 
             if (reply === 1) {
                 await sleep(2000);
@@ -1079,6 +1093,9 @@ class Game extends Client {
                 this.loginMessage1 = 'To play on this world move to a free area first';
             }
         } catch (err) {
+            this.stream?.close();
+            this.stream = null;
+            setPageStatus('Unable to connect to the game server. Check your connection or choose another world, then try logging in again.', true);
             console.log(err);
             this.loginMessage0 = '';
             this.loginMessage1 = 'Error connecting to server.';

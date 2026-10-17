@@ -108,7 +108,7 @@ module.exports = () => ({
             chunks: 'all',
             cacheGroups: {
                 shell: {
-                    test: /[\/]src[\/]js[\/](?:page-shell|manifest|jagex2[\/]util[\/]JsUtil)\.ts$/,
+                    test: /[\/]src[\/]js[\/](?:page-shell|manifest|connection|jagex2[\/]util[\/]JsUtil)\.ts$/,
                     name: 'site-shell',
                     enforce: true,
                     priority: 20
