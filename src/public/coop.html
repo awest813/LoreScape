@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>LoreScape · Offline & private co-op</title>
+        <meta name="theme-color" content="#101c1b" />
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="stylesheet" href="/coop/style.css" />
+    </head>
+    <body>
+        <main>
+            <header>
+                <div>
+                    <p class="eyebrow">YOUR WORLD, YOUR PARTY</p>
+                    <h1>LoreScape</h1>
+                    <p>Your offline adventure, with room for three friends.</p>
+                </div>
+                <span id="connection" class="pill">Offline</span>
+            </header>
+            <p id="notice" role="status" aria-live="polite">Create a saved world or join a friend’s room.</p>
+            <section id="lobby" class="grid">
+                <article>
+                    <h2>Your saved worlds</h2>
+                    <label
+                        >Saved world<select id="worlds">
+                            <option value="">Create a new world</option>
+                        </select></label
+                    ><label>World name<input id="worldName" maxlength="60" value="My world" /></label>
+                    <div class="row"><button id="solo">Play solo</button><button data-room-only id="host" class="secondary">Create private room</button></div>
+                    <p id="worldInfo">Create a world to start an adventure.</p>
+                    <p>Your browser keeps the party’s characters. Export backups to keep a portable copy.</p>
+                    <div class="row">
+                        <button id="export" class="secondary">Export backup</button><button id="recover" class="secondary">Restore earlier save</button><button id="rename" class="secondary">Rename world</button
+                        ><button id="delete" class="secondary">Delete world…</button>
+                    </div>
+                </article>
+                <article>
+                    <h2 data-room-only>Join friends</h2>
+                    <label data-room-only>Room code<input id="code" maxlength="12" autocomplete="off" placeholder="8-character code" /></label
+                    ><label data-room-only
+                        >Connection<select id="transport">
+                            <option value="auto">Automatic · WebRTC with relay fallback</option>
+                            <option value="relay">Relay · restricted networks</option>
+                            <option value="rtc">WebRTC only</option>
+                        </select></label
+                    ><button data-room-only id="join">Join room</button>
+                    <p data-room-only>The host keeps your progress. Rejoin the same world with your character name.</p>
+                    <label>Import backup<input id="importFile" type="file" accept=".json,application/json" /></label>
+                    <div id="importPreview" hidden>
+                        <p id="importDescription"></p>
+                        <label><input type="checkbox" id="replace" /> Replace the matching saved world (keeps prior snapshots)</label><button id="importConfirm" class="secondary">Import reviewed backup</button>
+                    </div>
+                </article>
+            </section>
+            <dialog id="deleteDialog">
+                <h2>Delete this saved world?</h2>
+                <p id="deleteDescription"></p>
+                <label>Type the world name to confirm<input id="deleteName" autocomplete="off" /></label>
+                <div class="row"><button id="deleteConfirm">Delete world</button><button id="deleteCancel" class="secondary">Keep world</button></div>
+            </dialog>
+            <section id="session" hidden>
+                <div class="sessionbar">
+                    <div><span id="sessionKind" class="eyebrow">PRIVATE ROOM</span><strong id="roomCode"></strong><button id="copy" class="secondary">Copy invite</button><button id="fullscreen" class="secondary">Focus game</button></div>
+                    <div class="row">
+                        <span id="saveStatus">Host-owned saves</span><button id="save" class="secondary">Save now</button><button id="sessionExport" class="secondary">Download backup</button><button id="leave" class="secondary">Leave room</button>
+                    </div>
+                </div>
+                <div class="playgrid">
+                    <div id="gameViewport">
+                        <button id="exitFullscreen" class="secondary">Exit fullscreen</button>
+                        <div id="gameStage"><iframe id="game" title="RuneScape game" allow="autoplay" hidden></iframe></div>
+                    </div>
+                    <aside>
+                        <h2>Party <span id="slots">1 / 4</span></h2>
+                        <ul id="party"></ul>
+                        <div id="hostSettings">
+                            <h2>World settings</h2>
+                            <label
+                                >XP multiplier<select id="xpRate">
+                                    <option>1</option>
+                                    <option>2</option>
+                                    <option>5</option>
+                                    <option>10</option>
+                                </select></label
+                            ><label
+                                >NPC loot quantity<select id="lootRate">
+                                    <option>1</option>
+                                    <option>2</option>
+                                    <option>3</option>
+                                    <option>5</option>
+                                </select></label
+                            ><label
+                                >Group loot<select id="lootMode">
+                                    <option value="killer">Original ownership</option>
+                                    <option value="shared">Shared tradable NPC loot</option>
+                                </select></label
+                            ><button id="applySettings">Apply settings</button>
+                            <p>Loot quantity increases tradable NPC death drops, not rare-drop chances. Any party member can claim shared drops; non-stackable items remain separate ground items.</p>
+                        </div>
+                        <p id="guestSettings" hidden></p>
+                        <p>Use the game’s Existing User button with your character name. Keep the host tab open. Automatic saves run every 30 seconds.</p>
+                    </aside>
+                </div>
+            </section>
+            <section id="devicePanel" class="grid utility">
+                <article>
+                    <h2>Chromebook & device settings</h2>
+                    <p>Low detail, 30 FPS and muted audio keep the default lightweight. Settings stay on this device.</p>
+                    <div class="settingsgrid">
+                        <label
+                            >Graphics detail<select id="detail">
+                                <option value="low">Low · less memory</option>
+                                <option value="high">High · full detail</option>
+                            </select></label
+                        ><label
+                            >Frame limit<select id="fps">
+                                <option>15</option>
+                                <option>30</option>
+                                <option>50</option>
+                            </select></label
+                        ><label
+                            >Game size<select id="scale">
+                                <option value="fit">Fit window</option>
+                                <option value="native">Original pixels</option>
+                                <option value="large">Large · 125%</option>
+                            </select></label
+                        ><label><input id="mute" type="checkbox" checked /> Mute game audio</label>
+                    </div>
+                    <div class="row"><button id="deviceSave" class="secondary">Apply device settings</button><button id="batteryPreset" class="secondary">Battery saver</button></div>
+                    <p>Graphics detail takes effect next session. FPS, audio and size update now; simulation speed stays the same.</p>
+                </article>
+                <article>
+                    <h2>Offline & browser storage</h2>
+                    <p id="offlineStatus" role="status">Checking offline files…</p>
+                    <div class="row"><button id="downloadOffline">Download offline game</button><button id="cancelOffline" class="secondary" hidden>Cancel download</button><button id="installApp" class="secondary" hidden>Install app</button><button id="removeOffline" class="secondary">Remove game download</button></div>
+                    <progress aria-label="Offline game download" id="offlineProgress" hidden max="100" value="0"></progress>
+                    <p id="storageInfo" role="status">Checking browser storage…</p>
+                    <button id="persistStorage" class="secondary">Request persistent storage</button>
+                    <p>Game downloads stay in this browser. Export a backup to move your saves to another device. Offline files and character saves are separate. Export backups before clearing browser data. Chromebook sleep may suspend the game.</p>
+                </article>
+            </section>
+            <footer>Character progression, shared inventories, world variables, and settings persist. NPCs, ground items, and temporary world changes reset between sessions.</footer>
+        </main>
+        <script type="module" src="/coop/lobby.mjs"></script>
+    </body>
+</html>

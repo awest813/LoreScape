@@ -1,4 +1,7 @@
 /node_modules/
+/.local/
+/dist/
+/dist.previous/
 
 /public/*
 /.idea/

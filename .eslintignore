@@ -3,3 +3,7 @@ public
 work
 src/js/vendor
 *.js
+
+.local
+dist
+dist.previous

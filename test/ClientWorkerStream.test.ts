@@ -52,3 +52,21 @@ test('buffer overflow closes the reader and wakes pending reads', async (): Prom
     stream.wwin.onmessage({type: 'data', data: new Uint8Array(5001)});
     await expect(reading).rejects.toThrow('closed');
 });
+
+test('queues an initial world burst spanning several protocol frames', async (): Promise<void> => {
+    const first: Uint8Array = new Uint8Array(5000).fill(17);
+    const second: Uint8Array = new Uint8Array(5000).fill(29);
+    stream.wwin.onmessage({type: 'data', data: first});
+    stream.wwin.onmessage({type: 'data', data: second});
+    expect(stream.available).toBe(10000);
+    const received: Uint8Array = new Uint8Array(10000);
+    await stream.readBytes(received, 0, received.length, 500);
+    expect(received.subarray(0, 5000)).toEqual(first);
+    expect(received.subarray(5000)).toEqual(second);
+    expect(stream.available).toBe(0);
+});
+
+test('bounds the combined worker receive queue', async (): Promise<void> => {
+    for (let i: number = 0; i < 210; i++) stream.wwin.onmessage({type: 'data', data: new Uint8Array(5000)});
+    await expect(stream.read()).rejects.toThrow('closed');
+});

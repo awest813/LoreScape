@@ -47,7 +47,7 @@ const config = {
         }),
         {
             apply(compiler) {
-                if (!isProduction) return;
+                if (!isProduction || compiler.options.entry.index.import.includes('./src/js/game.ts')) return;
                 compiler.hooks.afterEmit.tap('LocalServerKit', compilation => {
                     require('./scripts/build-local-kit.cjs').buildKit(Object.keys(compilation.assets));
                 });
@@ -106,13 +106,29 @@ const config = {
     }
 };
 
-module.exports = () => ({
+module.exports = (env = {}) => {
+    if (env.coop) {
+        config.entry = {index: './src/js/game.ts'};
+        config.output.filename = '[name].js';
+        config.plugins = config.plugins.filter(plugin => !(plugin instanceof HtmlWebpackPlugin));
+        config.plugins.push(new HtmlWebpackPlugin({template: 'src/html/coop-game.html', filename: 'index.html', chunks: ['index']}));
+        config.plugins.push({apply(compiler) {
+            compiler.hooks.thisCompilation.tap('CoopManifest', compilation => {
+                compilation.hooks.processAssets.tap({name: 'CoopManifest', stage: webpack.Compilation.PROCESS_ASSETS_STAGE_SUMMARIZE}, () => {
+                    const manifest = JSON.parse(compilation.getAsset('manifest.json').source.source().toString());
+                    Object.assign(manifest, {id: '/coop.html', start_url: '/coop.html', scope: '/', display: 'standalone'});
+                    compilation.updateAsset('manifest.json', new webpack.sources.RawSource(JSON.stringify(manifest)));
+                });
+            });
+        }});
+    }
+    return ({
     ...config,
     mode: isProduction ? 'production' : 'development',
     optimization: {
         // Keep public browser and WebAssembly property names intact.
         minimizer: [new TerserPlugin({parallel: 2})],
-        splitChunks: {
+        splitChunks: env.coop ? false : {
             chunks: 'all',
             cacheGroups: {
                 shell: {
@@ -123,7 +139,8 @@ module.exports = () => ({
                 }
             }
         },
-        runtimeChunk: 'single'
+        runtimeChunk: env.coop ? false : 'single'
     },
     devtool: isProduction ? false : 'source-map'
 });
+};

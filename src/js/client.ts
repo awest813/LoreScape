@@ -36,7 +36,7 @@ import IdkType from './jagex2/config/IdkType';
 import {setPageStatus} from './page-shell';
 import {downloadUrl, sleep} from './jagex2/util/JsUtil';
 import Bzip from './vendor/bzip';
-import {playMidi, stopMidi} from './jagex2/util/AudioUtil';
+import {playMidi, stopMidi, setAudioMuted} from './jagex2/util/AudioUtil';
 import LocType from './jagex2/config/LocType';
 import NpcType from './jagex2/config/NpcType';
 import FloType from './jagex2/config/FloType';
@@ -48,6 +48,7 @@ import Tile from './jagex2/dash3d/type/Tile';
 import ClientWorkerStream from './jagex2/io/ClientWorkerStream';
 import {downloadURL} from './jagex2/util/SaveUtil';
 import {Host, Peer} from './jagex2/io/RTCDataChannels';
+import {Host as CoopHost, Peer as CoopPeer} from './jagex2/io/CoopDataChannels';
 
 // noinspection JSSuspiciousNameCombination
 export abstract class Client extends GameShell {
@@ -494,8 +495,8 @@ export abstract class Client extends GameShell {
     // webworker + webrtc
     protected worker: Worker | undefined = undefined;
     protected workerReady: boolean = false;
-    protected host: Host | null = null;
-    protected peer: Peer | null = null;
+    protected host: Host | CoopHost | null = null;
+    protected peer: Peer | CoopPeer | null = null;
 
     // debug
     // alt+shift click to add a tile overlay
@@ -725,11 +726,28 @@ export abstract class Client extends GameShell {
     };
 
     protected initWorkerP2P = (): void => {
+        const preferences: {fps?: number; mute?: boolean} | undefined = (window.parent as Window & {LoreCoop?: {preferences?: {fps: number; mute: boolean}}}).LoreCoop?.preferences;
+        if (preferences) this.applyCoopPreferences(preferences);
+        window.addEventListener('message', (event: MessageEvent): void => {
+            if (preferences && event.source === window.parent && event.origin === location.origin && event.data?.type === 'coop-device') this.applyCoopPreferences(event.data.preferences);
+        });
+        window.addEventListener(
+            'keydown',
+            (event: KeyboardEvent): void => {
+                if (preferences && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 's') {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    window.parent.postMessage({type: 'coop-save-shortcut'}, location.origin);
+                }
+            },
+            true
+        );
         if (Client.getParameter('world') === '999') {
             this.worker = new Worker('worker.js', {type: 'module'});
             this.worker.onmessage = this.onmessage;
             this.worker.onerror = (): void => setPageStatus('The browser server failed to start. Check worker.js and its matching server dependencies, then reload.', true);
-            this.host = new Host(this.worker);
+            (window.parent as Window & {LoreCoop?: {attachWorker(worker: Worker): void}}).LoreCoop?.attachWorker(this.worker);
+            this.host = Client.getParameter('coop') === '1' ? new CoopHost(this.worker) : new Host(this.worker);
         } else if (Client.getParameter('world') === '998') {
             this.worker = {
                 onmessage: (e: MessageEvent): void => {
@@ -758,11 +776,18 @@ export abstract class Client extends GameShell {
                     throw new Error();
                 }
             };
-            this.peer = new Peer(this.worker);
+            this.peer = Client.getParameter('coop') === '1' ? new CoopPeer(this.worker) : new Peer(this.worker);
         }
     };
 
+    private applyCoopPreferences(preferences: {fps?: number; mute?: boolean}): void {
+        if (!preferences) return;
+        if ([15, 30, 50].includes(preferences.fps || 0)) this.setTargetedFramerate(preferences.fps!);
+        if (typeof preferences.mute === 'boolean') setAudioMuted(preferences.mute);
+    }
+
     protected onmessage = (e: MessageEvent): void => {
+        if (e.data.type?.startsWith('coop-')) return;
         switch (e.data.type) {
             case 'ready':
                 this.workerReady = true;
@@ -785,6 +810,10 @@ export abstract class Client extends GameShell {
     };
 
     protected exchangeSDP = async (): Promise<void> => {
+        if (Client.getParameter('coop') === '1') {
+            await this.host?.setupPeerConnection();
+            return;
+        }
         if (+Client.getParameter('world') === 999) {
             if (this.host) {
                 await this.host.setupPeerConnection();

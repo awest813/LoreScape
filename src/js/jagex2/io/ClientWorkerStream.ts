@@ -8,7 +8,9 @@ export default class ClientWorkerStream {
         private readonly worker: Worker,
         private readonly uniqueId: string
     ) {
-        this.wwin = new WorkerReader(5000);
+        // A world can send several protocol frames before the next game tick.
+        // Bound the receive queue separately from the 5000-byte frame limit.
+        this.wwin = new WorkerReader(1024 * 1024);
         worker.onerror = (): void => this.close();
         worker.onmessageerror = (): void => this.close();
         worker.postMessage({type: 'connection', id: uniqueId});
@@ -89,7 +91,7 @@ class WorkerReader {
         }
         if (message?.type !== 'data' || !message.data) return;
         const bytes: Uint8Array = new Uint8Array(message.data);
-        if (this.total + bytes.length > this.limit) {
+        if (bytes.length > 5000 || this.total + bytes.length > this.limit) {
             this.close();
             return;
         }

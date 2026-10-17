@@ -4,7 +4,8 @@
   "description": "LoreScape browser client and cache tools, based on the 2004Scape TypeScript client.",
   "dependencies": {
     "foundation-sites": "^6.8.1",
-    "jquery": "^3.7.1"
+    "jquery": "^3.7.1",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@types/foundation-sites": "^6.4.3",
@@ -38,12 +39,17 @@
     "webpack": "^5.91.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^5.1.4",
-    "webpack-dev-server": "^6.0.0",
-    "ws": "^8.22.0"
+    "webpack-dev-server": "^6.0.0"
   },
   "scripts": {
+    "setup:coop": "node tools/setup-coop.mjs",
+    "bundle:coop": "node tools/bundle-coop.mjs && node tools/offline-manifest.mjs",
+    "coop": "node tools/serve-coop.mjs",
+    "test:coop": "node tools/smoke-coop.cjs",
+    "test:session": "node --test tools/tests/*.test.mjs",
     "build": "npm run asc && webpack --mode=production --node-env=production",
     "build:dev": "npm run asc && webpack --mode=development",
+    "build:coop": "npm run asc && webpack --mode=development --env coop && node tools/offline-manifest.mjs",
     "build:prod": "npm run asc && webpack --mode=production --node-env=production",
     "dev": "npm run asc && webpack-dev-server --hot",
     "lint": "eslint . --ext .ts",
@@ -54,6 +60,17 @@
     "asc": "asc --target release --optimizeLevel 3 --converge",
     "local": "npm run build:dev && npm run preview",
     "prod": "npm run build && npm run preview",
+    "test:offline": "node tools/tests/browser-offline.cjs",
+    "test:storage": "node tools/tests/browser-storage.cjs",
+    "test:production": "npm run asc && webpack --mode=production --node-env=production --env coop --output-path .local/production-client && node tools/tests/browser-production.cjs",
+    "test:personas": "node tools/tests/browser-personas.cjs",
+    "build:web": "node tools/build-web.mjs",
+    "build:web:solo": "node tools/build-web.mjs --solo",
+    "start": "node tools/serve-coop.mjs --production",
+    "test:hosting": "node --test tools/tests/hosting.test.mjs",
+    "test:downloads": "node tools/tests/browser-downloads.cjs",
+    "setup:server": "node tools/setup-coop.mjs --server-only",
+    "setup:web": "npm run setup:server && npm run build:web",
     "typecheck": "npm run asc && tsc --noEmit",
     "preview": "node scripts/preview.cjs",
     "check:pages": "node scripts/check-pages.cjs",
