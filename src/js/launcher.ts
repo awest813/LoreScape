@@ -17,11 +17,13 @@ const launchButton: HTMLButtonElement = document.getElementById('launch-button')
 const connectionStatus: HTMLElement = document.querySelector('.lore-status')!;
 const stage: HTMLElement = document.getElementById('client-stage')!;
 const parameters: URLSearchParams = new URLSearchParams(window.location.search);
+if (window.location.hash === '#cache-export') (document.getElementById('cache-export') as HTMLDetailsElement).open = true;
 let preferences: LauncherPreferences = {...defaultPreferences};
 let worlds: WorldInfo[] = [];
 let started: boolean = false;
 let pendingCheck: AbortController | undefined;
 let cacheDownload: AbortController | undefined;
+const cacheFormat: HTMLSelectElement = document.getElementById('cache-format') as HTMLSelectElement;
 const downloadCacheButton: HTMLButtonElement = document.getElementById('download-cache') as HTMLButtonElement;
 const cancelDownloadButton: HTMLButtonElement = document.getElementById('cancel-cache-download') as HTMLButtonElement;
 const downloadStatus: HTMLElement = document.getElementById('cache-download-status')!;
@@ -295,6 +297,7 @@ async function exportCache(): Promise<void> {
     const world: number = Number(worldInput.value);
     if (!validWorld(world)) return;
     const address: string = localAddress.value;
+    const format: 'core' | 'classic' = cacheFormat.value === 'core' ? 'core' : 'classic';
     const controller: AbortController = new AbortController();
     cacheDownload = controller;
     downloadCacheButton.disabled = true;
@@ -305,12 +308,17 @@ async function exportCache(): Promise<void> {
         const downloader: typeof import('./cache-download') = await import(/* webpackChunkName: "cache-download" */ './cache-download');
         controller.signal.throwIfAborted();
         const source: import('./cache-download').CacheSource = await downloader.resolveCacheSource(world, address, window.location.protocol === 'https:', controller.signal);
-        const blob: Blob = await downloader.downloadServerCache(source, controller.signal, (message: string): void => {
-            if (!controller.signal.aborted) downloadStatus.textContent = message;
-        });
+        const blob: Blob = await downloader.downloadServerCache(
+            source,
+            controller.signal,
+            (message: string): void => {
+                if (!controller.signal.aborted) downloadStatus.textContent = message;
+            },
+            format
+        );
         controller.signal.throwIfAborted();
-        downloader.saveCacheZip(blob, world);
-        downloadStatus.textContent = `World ${world} core cache ZIP sent to your browser (${(blob.size / 1024 / 1024).toFixed(1)} MB). Save it if prompted, then open Files → Downloads. This does not enable offline play.`;
+        downloader.saveCacheZip(blob, world, format);
+        downloadStatus.textContent = `World ${world} ${format === 'classic' ? 'tools' : 'core'} cache ZIP sent to your browser (${(blob.size / 1024 / 1024).toFixed(1)} MB). Save it if prompted, then open Files → Downloads. This does not enable offline play.`;
     } catch (error) {
         if (!controller.signal.aborted) downloadStatus.textContent = `Cache download failed. ${error instanceof Error ? error.message : 'Check the selected server and try again.'} No ZIP was saved.`;
     } finally {
@@ -323,3 +331,12 @@ async function exportCache(): Promise<void> {
         }
     }
 }
+
+cacheFormat.addEventListener('change', (): void => {
+    cancelCacheDownload();
+    const classic: boolean = cacheFormat.value !== 'core';
+    downloadCacheButton.textContent = classic ? 'Download classic cache (.zip)' : 'Download core cache (.zip)';
+    document.getElementById('cache-format-help')!.textContent = classic
+        ? 'Save main_file_cache.dat and .idx0–.idx4 as a ZIP for model inspection in Cache viewer/JagEd. Extract it in ChromeOS Files → Downloads, then choose all six cache files in the tool. Animation, music, and map stores are excluded.'
+        : 'Save the eight startup archives and checksum table in the browser client format. Maps and music are excluded. This format is for browser server bundles; use Classic cache for Cache viewer/JagEd.';
+});

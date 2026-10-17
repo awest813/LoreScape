@@ -15,11 +15,12 @@ export async function resolveCacheSource(world: number, address: string, secureP
 
 const archiveNames: string[] = ['title', 'config', 'interface', 'media', 'models', 'textures', 'wordenc', 'sounds'];
 
-export async function downloadServerCache(source: CacheSource, signal: AbortSignal, progress: (message: string) => void): Promise<Blob> {
+export async function downloadServerCache(source: CacheSource, signal: AbortSignal, progress: (message: string) => void, format: 'core' | 'classic' = 'core'): Promise<Blob> {
     signal.throwIfAborted();
     progress('Fetching the server checksum table…');
     const crc: Int8Array = await loadClientChecksums(source.address, source.world, signal);
     const checksums: DataView = new DataView(crc.buffer, crc.byteOffset, crc.byteLength);
+    const archives: Uint8Array[] = [];
     const files: ZipFile[] = [{name: 'data/pack/client/crc', bytes: Uint8Array.from(crc)}];
     let total: number = crc.length;
     for (let index: number = 0; index < archiveNames.length; index++) {
@@ -32,9 +33,15 @@ export async function downloadServerCache(source: CacheSource, signal: AbortSign
         const bytes: Int8Array = await downloadArchive(url, checksum, signal);
         total += bytes.length;
         if (total > 64 * 1024 * 1024) throw new Error('This cache exceeds the 64 MB browser export limit. No ZIP was saved.');
-        files.push({name: `data/pack/client/${name}`, bytes: Uint8Array.from(bytes)});
+        const archive: Uint8Array = Uint8Array.from(bytes);
+        archives.push(archive);
+        files.push({name: `data/pack/client/${name}`, bytes: archive});
     }
     signal.throwIfAborted();
+    if (format === 'classic') {
+        const converter: typeof import('./tools-cache-export') = await import(/* webpackChunkName: "tools-cache-export" */ './tools-cache-export');
+        return converter.createToolsCacheZip(archives, source.world, source.address, signal, progress);
+    }
     const note: string = `LoreScape core client cache — revision 225
 World: ${source.world}
 File service: ${source.address}
@@ -53,11 +60,11 @@ This download alone does not enable offline play.
     return createCacheZip(files);
 }
 
-export function saveCacheZip(blob: Blob, world: number): void {
+export function saveCacheZip(blob: Blob, world: number, format: 'core' | 'classic' = 'core'): void {
     const url: string = URL.createObjectURL(blob);
     const link: HTMLAnchorElement = document.createElement('a');
     link.href = url;
-    link.download = `lorescape-world-${world}-core-cache.zip`;
+    link.download = `lorescape-world-${world}-${format === 'classic' ? 'tools' : 'core'}-cache.zip`;
     document.body.append(link);
     link.click();
     link.remove();

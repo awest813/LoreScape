@@ -37,9 +37,11 @@ If startup fails, the status panel now shows the failed endpoint and error. A fa
 
 ## Download a cache on Chromebook
 
-In the launcher, choose a world (or configure **Local server**), open **Download cache for Chromebook**, and select **Download core cache (.zip)**. Wait for the file progress to finish, save the ZIP if Chrome prompts, then open it in **Files → Downloads**. No terminal, extension, or Linux container is needed. Downloads can be cancelled; changing the selected world or server stops the old download.
+In the launcher, choose a world (or configure **Local server**), open **Download cache for Chromebook**, and leave **Classic cache for Cache viewer / JagEd** selected. Click **Download classic cache (.zip)**. After downloading, open **Files → Downloads**, extract the ZIP, then open **Cache viewer** or **JagEd** and choose all six `main_file_cache.dat` and `.idx0`–`.idx4` files together. No terminal, extension, or Linux container is needed. Downloads and model conversion can be cancelled.
 
-The ZIP contains the eight checksum-verified startup archives, their `crc` table, and a README, using the `data/pack/client/` layout for compatible browser bundles. It is **not** a classic `main_file_cache.dat`/`.idx` export for Cache viewer or JagEd. Maps, music, server code, and player saves are excluded; the ZIP alone does not enable offline play. The selected file server must be reachable and permit browser downloads (CORS), just as it must for gameplay. An incomplete or invalid download produces no ZIP. Exports are limited to 64 MB to bound memory use on smaller devices.
+The exporter verifies the selected server's eight revision 225 archives, writes them into classic cache sectors, and converts its models into the format read by these tools. The ZIP includes a README. Animation, music, and map stores are empty; this is a model inspection cache for LoreScape tools, not a complete revision 317 game cache or an offline game server. The file server must be reachable and permit browser downloads (CORS). Failed or cancelled exports produce no ZIP. Classic cache data is limited to 64 MB.
+
+For browser server bundles, select **Core browser client files** instead. That ZIP contains the eight startup archives and `crc` table under `data/pack/client/`; use Classic cache for Cache viewer and JagEd.
 
 ## Validate and build
 
