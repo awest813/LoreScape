@@ -1,101 +1,83 @@
 export default class Database {
-    private readonly db: IDBDatabase;
+    private available: boolean = true;
 
-    constructor(db: IDBDatabase) {
-        db.onerror = this.onerror;
-        db.onclose = this.onclose;
-        this.db = db;
+    constructor(private readonly db: IDBDatabase) {
+        db.onclose = (): void => {
+            this.available = false;
+        };
+        db.onversionchange = (): void => {
+            this.available = false;
+            db.close();
+        };
     }
 
-    static openDatabase = async (): Promise<IDBDatabase> => {
-        return await new Promise<IDBDatabase>((resolve, reject): void => {
+    static async openDatabase(timeoutMs: number = 5000): Promise<IDBDatabase> {
+        return new Promise<IDBDatabase>((resolve, reject): void => {
+            let settled: boolean = false;
             const request: IDBOpenDBRequest = indexedDB.open('lostcity', 1);
-
-            request.onsuccess = (event: Event): void => {
-                const target: IDBOpenDBRequest = event.target as IDBOpenDBRequest;
-                console.log('database success!');
-                resolve(target.result);
+            const fail = (error: Error | DOMException): void => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(timer);
+                reject(error);
             };
-
-            request.onupgradeneeded = (event: Event): void => {
-                const target: IDBOpenDBRequest = event.target as IDBOpenDBRequest;
-                target.result.createObjectStore('cache');
-            };
-
-            request.onblocked = (): void => reject(new Error('Browser cache is blocked by another open client.'));
-
-            request.onerror = (event: Event): void => {
-                const target: IDBOpenDBRequest = event.target as IDBOpenDBRequest;
-                console.error('database error!: ', target.error);
-                reject(target.error || new Error('Browser cache unavailable.'));
-            };
-        });
-    };
-
-    cacheload = async (name: string): Promise<Int8Array | undefined> => {
-        return await new Promise<Int8Array | undefined>((resolve): void => {
-            const transaction: IDBTransaction = this.db.transaction('cache', 'readonly');
-            const store: IDBObjectStore = transaction.objectStore('cache');
-            const request: IDBRequest<Int8Array> = store.get(name); // this.genHash(name)
-
+            const timer: ReturnType<typeof setTimeout> = setTimeout((): void => fail(new Error('Browser cache timed out.')), timeoutMs);
             request.onsuccess = (): void => {
-                // console.log('cacheload successful!');
+                clearTimeout(timer);
+                if (settled) {
+                    request.result.close();
+                    return;
+                }
+                settled = true;
                 resolve(request.result);
             };
-
-            request.onerror = (event: Event): void => {
-                // console.error('cacheload error!:', event);
-                resolve(undefined);
+            request.onupgradeneeded = (): void => {
+                if (!request.result.objectStoreNames.contains('cache')) request.result.createObjectStore('cache');
             };
+            request.onblocked = (): void => fail(new Error('Browser cache is blocked by another open client.'));
+            request.onerror = (): void => fail(request.error || new Error('Browser cache unavailable.'));
         });
+    }
+
+    cacheload = async (name: string): Promise<Int8Array | undefined> => {
+        return this.transaction<Int8Array>('readonly', (store: IDBObjectStore): IDBRequest<Int8Array> => store.get(name));
     };
 
-    cachesave = async (name: string, src: Int8Array): Promise<void> => {
-        return await new Promise<void>((resolve, reject): void => {
-            // if (src.length > 2000000) {
-            //     reject();
-            //     return;
-            // }
+    cachesave = async (name: string, src: Int8Array): Promise<boolean> => {
+        const key: IDBValidKey | undefined = await this.transaction<IDBValidKey>('readwrite', (store: IDBObjectStore): IDBRequest<IDBValidKey> => store.put(src, name));
+        return key !== undefined;
+    };
 
-            const transaction: IDBTransaction = this.db.transaction('cache', 'readwrite');
-            const store: IDBObjectStore = transaction.objectStore('cache');
-            const request: IDBRequest<IDBValidKey> = store.put(src, name); // this.genHash(name)
-
-            request.onsuccess = (): void => {
-                // console.log('cachesave successful!');
-                resolve();
+    // Cache failures must not interrupt startup, map downloads, or unawaited saves.
+    private async transaction<T>(mode: IDBTransactionMode, action: (store: IDBObjectStore) => IDBRequest<T>): Promise<T | undefined> {
+        if (!this.available) return undefined;
+        return new Promise<T | undefined>((resolve): void => {
+            let timer: ReturnType<typeof setTimeout> | undefined;
+            const finish = (value?: T, failed: boolean = false): void => {
+                if (timer !== undefined) clearTimeout(timer);
+                if (failed) this.available = false;
+                resolve(value);
             };
-
-            request.onerror = (event: Event): void => {
-                // console.error('cachesave error!:', event);
-                reject();
-            };
-        });
-    };
-
-    private onclose = (event: Event): void => {
-        console.log('database close!');
-    };
-
-    private onerror = (event: Event): void => {
-        console.log('database error!');
-    };
-
-    private genHash = (str: string): number => {
-        const trimmed: string = str.trim();
-        let hash: number = 0;
-        for (let i: number = 0; i < trimmed.length && i < 12; i++) {
-            const c: string = trimmed.charAt(i);
-            hash *= 37;
-
-            if (c >= 'A' && c <= 'Z') {
-                hash += c.charCodeAt(0) + 1 - 65;
-            } else if (c >= 'a' && c <= 'z') {
-                hash += c.charCodeAt(0) + 1 - 97;
-            } else if (c >= '0' && c <= '9') {
-                hash += c.charCodeAt(0) + 27 - 48;
+            try {
+                const transaction: IDBTransaction = this.db.transaction('cache', mode);
+                const request: IDBRequest<T> = action(transaction.objectStore('cache'));
+                let value: T | undefined;
+                request.onsuccess = (): void => {
+                    value = request.result;
+                };
+                transaction.oncomplete = (): void => finish(value);
+                transaction.onabort = transaction.onerror = (): void => finish(undefined, true);
+                timer = setTimeout((): void => {
+                    finish(undefined, true);
+                    try {
+                        transaction.abort();
+                    } catch {
+                        /* Already inactive. */
+                    }
+                }, 5000);
+            } catch {
+                finish(undefined, true);
             }
-        }
-        return hash;
-    };
+        });
+    }
 }

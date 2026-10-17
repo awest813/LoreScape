@@ -7,6 +7,7 @@ import Pix24 from './jagex2/graphics/Pix24';
 import PixFont from './jagex2/graphics/PixFont';
 
 import Jagfile from './jagex2/io/Jagfile';
+import {downloadArchive, validateArchive} from './jagex2/io/ArchiveDownload';
 import Packet from './jagex2/io/Packet';
 import ClientStream from './jagex2/io/ClientStream';
 import Isaac from './jagex2/io/Isaac';
@@ -811,8 +812,12 @@ export abstract class Client extends GameShell {
         let retry: number = 2;
         let attempts: number = 0;
         let data: Int8Array | undefined = await this.db?.cacheload(filename);
-        if (data && Packet.crc32(data) !== crc) {
-            data = undefined;
+        if (data) {
+            try {
+                validateArchive(data, crc);
+            } catch {
+                data = undefined;
+            }
         }
 
         if (data) {
@@ -824,9 +829,9 @@ export abstract class Client extends GameShell {
 
             try {
                 if (+Client.getParameter('world') < 998) {
-                    data = await downloadUrl(`${Client.httpAddress}/${filename}${crc}`);
+                    data = await downloadArchive(`${Client.httpAddress}/${filename}${crc}`, crc);
                 } else {
-                    data = await downloadUrl(`${Client.httpAddress}/${filename}`);
+                    data = await downloadArchive(`${Client.httpAddress}/${filename}`, crc);
                 }
             } catch (e) {
                 if (++attempts >= 3) throw e;

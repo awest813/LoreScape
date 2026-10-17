@@ -33,7 +33,7 @@ Check your local server without sending credentials:
 npm run check:server -- --local http://localhost:8888 --origin http://localhost:8080
 ```
 
-If startup fails, the status panel now shows the failed endpoint and error. A failed CRC request usually means the server is stopped, the web port is wrong, or browser access is blocked by CORS/mixed content. An HTML response at `/crc` means the URL points at a website rather than the game file service. Browser cache is optional; unavailable storage no longer prevents startup.
+If startup fails, the status panel now shows the failed endpoint and error. A failed CRC request usually means the server is stopped, the web port is wrong, or browser access is blocked by CORS/mixed content. An HTML response at `/crc` means the URL points at a website rather than the game file service. Browser cache is optional for gameplay; unavailable, closed, or stalled storage falls back to server downloads. Cache viewer and JagEd imports report storage failures instead of claiming the files were saved. Game archives are checked against their advertised length and CRC before decoding or caching; mismatched or HTML responses name the failed archive in the status panel.
 
 ## Validate and build
 

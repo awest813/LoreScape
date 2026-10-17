@@ -1,4 +1,4 @@
-import {startClient} from './page-shell';
+import {setPageStatus, startClient} from './page-shell';
 import {downloadUrl} from './jagex2/util/JsUtil';
 import 'style/JagEd.scss';
 
@@ -101,7 +101,10 @@ class JagEd extends Client {
                         const file: File = files[i];
 
                         const data: ArrayBuffer = await file.arrayBuffer();
-                        await this.db?.cachesave(file.name, new Int8Array(data));
+                        if (!(await this.db?.cachesave(file.name, new Int8Array(data)))) {
+                            setPageStatus('Cannot import cache files because browser storage is unavailable. Enable site storage and reload before importing again.', true);
+                            return;
+                        }
                     }
 
                     await this.init();
