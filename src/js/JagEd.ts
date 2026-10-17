@@ -69,7 +69,7 @@ class JagEd extends Client {
         try {
             await Gzip();
             await Bzip.load(new Uint8Array(await downloadUrl('bz2.wasm')));
-            this.db = new Database(await Database.openDatabase());
+            this.db = await Database.openOptional();
 
             this.rightPanel = document.getElementById('rightPanel');
             setupCacheImport(this.db, this.init);
@@ -78,6 +78,7 @@ class JagEd extends Client {
         } catch (err) {
             this.errorLoading = true;
             console.error(err);
+            throw err;
         }
     };
 

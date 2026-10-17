@@ -66,7 +66,7 @@ class Viewer extends Client {
         try {
             await Gzip();
             await Bzip.load(new Uint8Array(await downloadUrl('bz2.wasm')));
-            this.db = new Database(await Database.openDatabase());
+            this.db = await Database.openOptional();
 
             this.drawArea?.bind();
             Draw3D.init2D();
@@ -79,6 +79,7 @@ class Viewer extends Client {
         } catch (err) {
             this.errorLoading = true;
             console.error(err);
+            throw err;
         }
     };
 

@@ -169,7 +169,7 @@ class MapView extends GameShell {
 
     load = async (): Promise<void> => {
         await Bzip.load(new Uint8Array(await downloadUrl('bz2.wasm')));
-        this.db = new Database(await Database.openDatabase());
+        this.db = await Database.openOptional();
 
         const worldmap: Jagfile = await this.loadWorldmap();
 

@@ -2,7 +2,7 @@ import {setPageStatus} from './page-shell';
 import {cacheNames, readCacheFolder, readCacheZip} from './cache-bundle';
 import type Database from './jagex2/io/Database';
 
-type CacheWriter = Pick<Database, 'cachesave'> & Partial<Pick<Database, 'cachesaveMany'>>;
+type CacheWriter = Pick<Database, 'cachesave'> & Partial<Pick<Database, 'cachesaveMany' | 'persistent'>>;
 const supportedNames: Set<string> = new Set(cacheNames);
 
 export async function importCacheFiles(files: ArrayLike<File>, cache: CacheWriter | null): Promise<number> {
@@ -39,6 +39,11 @@ export function setupCacheImport(cache: CacheWriter | null, refresh: () => Promi
     const folder: HTMLInputElement | null = document.querySelector('#cache-folder');
     const panel: HTMLElement | null = document.getElementById('mainPanel');
     if (!input || !panel) return;
+    if (cache?.persistent === false) {
+        const notice: HTMLParagraphElement = document.createElement('p');
+        notice.textContent = 'Browser storage is unavailable. You can still open a cache in this tab. Select the ZIP or folder again after reloading.';
+        document.getElementById('cache-import-help')?.after(notice);
+    }
     const inputs: HTMLInputElement[] = folder ? [input, folder] : [input];
     let importing: boolean = false;
     for (const control of inputs) control.disabled = false;
@@ -52,7 +57,10 @@ export function setupCacheImport(cache: CacheWriter | null, refresh: () => Promi
         try {
             const count: number = await importCacheSelection(files, cache, isFolder);
             await refresh();
-            setPageStatus(`Imported ${count} cache ${count === 1 ? 'file' : 'files'}.`);
+            const incomplete: boolean = panel.querySelector<HTMLCanvasElement>('#canvas')?.style.display === 'none';
+            setPageStatus(
+                `Imported ${count} cache ${count === 1 ? 'file' : 'files'}.${incomplete ? ' Add the remaining cache files, or open a complete classic cache ZIP.' : ''}${cache?.persistent === false ? ' Available in this tab only; reopen the cache after reloading.' : ''}`
+            );
         } catch (error) {
             setPageStatus(error instanceof Error ? error.message : 'Unable to import this cache.', true);
         } finally {

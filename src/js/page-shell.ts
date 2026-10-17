@@ -48,6 +48,14 @@ export function showStartupError(error?: unknown): void {
     setPageStatus(`Unable to load the client. ${detail || 'Check your connection and try again, or choose another world. Game servers and files must be available separately from this website.'}`, true);
 }
 
+export function setReadyStatus(): void {
+    let guidance: string = 'Click or focus the canvas to use the client.';
+    if (pageName === 'sounds') guidance = 'Search for a sound, then select it to play.';
+    else if (pageName === 'items') guidance = 'Search for an item, then select it to update the item command.';
+    else if (pageName === 'viewer' || pageName === 'JagEd') guidance = document.getElementById('modelList') ? 'Select a model from your cache.' : 'Open a classic cache ZIP or folder to begin.';
+    setPageStatus(`Ready. ${guidance}`);
+}
+
 window.addEventListener('unhandledrejection', showStartupError);
 window.addEventListener('error', showStartupError);
 setupManifest();

@@ -1,7 +1,12 @@
 export default class Database {
     private available: boolean = true;
+    readonly persistent: boolean;
+    private readonly memory: Map<string, Int8Array> | null;
 
-    constructor(private readonly db: IDBDatabase) {
+    constructor(private readonly db: IDBDatabase | null) {
+        this.persistent = db !== null;
+        this.memory = db ? null : new Map();
+        if (!db) return;
         db.onclose = (): void => {
             this.available = false;
         };
@@ -9,6 +14,14 @@ export default class Database {
             this.available = false;
             db.close();
         };
+    }
+
+    static async openOptional(): Promise<Database> {
+        try {
+            return new Database(await Database.openDatabase());
+        } catch {
+            return new Database(null);
+        }
     }
 
     static async openDatabase(timeoutMs: number = 5000): Promise<IDBDatabase> {
@@ -40,15 +53,25 @@ export default class Database {
     }
 
     cacheload = async (name: string): Promise<Int8Array | undefined> => {
+        if (this.memory) return this.memory.get(name)?.slice();
         return this.transaction<Int8Array>('readonly', (store: IDBObjectStore): IDBRequest<Int8Array> => store.get(name));
     };
 
     cachesave = async (name: string, src: Int8Array): Promise<boolean> => {
+        if (this.memory) {
+            this.memory.set(name, src.slice());
+            return true;
+        }
         const key: IDBValidKey | undefined = await this.transaction<IDBValidKey>('readwrite', (store: IDBObjectStore): IDBRequest<IDBValidKey> => store.put(src, name));
         return key !== undefined;
     };
 
     cachesaveMany = async (files: {name: string; bytes: Uint8Array}[]): Promise<boolean> => {
+        if (this.memory) {
+            const copies: {name: string; bytes: Int8Array}[] = files.map((file): {name: string; bytes: Int8Array} => ({name: file.name, bytes: new Int8Array(file.bytes)}));
+            for (const file of copies) this.memory.set(file.name, file.bytes);
+            return true;
+        }
         if (!files.length) return true;
         const key: IDBValidKey | undefined = await this.transaction<IDBValidKey>('readwrite', (store: IDBObjectStore): IDBRequest<IDBValidKey> => {
             try {
@@ -65,7 +88,8 @@ export default class Database {
 
     // Cache failures must not interrupt startup, map downloads, or unawaited saves.
     private async transaction<T>(mode: IDBTransactionMode, action: (store: IDBObjectStore) => IDBRequest<T>): Promise<T | undefined> {
-        if (!this.available) return undefined;
+        if (!this.available || !this.db) return undefined;
+        const db: IDBDatabase = this.db;
         return new Promise<T | undefined>((resolve): void => {
             let timer: ReturnType<typeof setTimeout> | undefined;
             const finish = (value?: T, failed: boolean = false): void => {
@@ -74,7 +98,7 @@ export default class Database {
                 resolve(value);
             };
             try {
-                const transaction: IDBTransaction = this.db.transaction('cache', mode);
+                const transaction: IDBTransaction = db.transaction('cache', mode);
                 const request: IDBRequest<T> = action(transaction.objectStore('cache'));
                 let value: T | undefined;
                 request.onsuccess = (): void => {

@@ -1,3 +1,4 @@
+import {loadClientChecksums} from './local-worlds';
 import {startClient} from './page-shell';
 import GameShell from './jagex2/client/GameShell';
 
@@ -58,9 +59,9 @@ class Playground extends Client {
         await this.showProgress(10, 'Connecting to fileserver');
 
         await Bzip.load(new Uint8Array(await downloadUrl('bz2.wasm')));
-        this.db = new Database(await Database.openDatabase());
+        this.db = await Database.openOptional();
 
-        const checksums: Packet = new Packet(new Uint8Array(await downloadUrl(`${Client.httpAddress}/crc`)));
+        const checksums: Packet = new Packet(new Uint8Array(await loadClientChecksums(Client.httpAddress, Number(Client.getParameter('world')))));
         const archiveChecksums: number[] = [];
         for (let i: number = 0; i < 9; i++) {
             archiveChecksums[i] = checksums.g4;

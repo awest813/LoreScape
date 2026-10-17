@@ -10,6 +10,30 @@ afterEach((): void => {
     delete (global as {indexedDB?: IDBFactory}).indexedDB;
 });
 
+test('optional tool storage still imports and reads caches when site storage is blocked', async (): Promise<void> => {
+    Object.defineProperty(global, 'indexedDB', {configurable: true, get: (): never => { throw new Error('Storage blocked by policy'); }});
+    const cache: Database = await Database.openOptional();
+    expect(cache.persistent).toBe(false);
+    await expect(cache.cachesaveMany([
+        {name: 'main_file_cache.dat', bytes: new Uint8Array([1, 2, 255])},
+        {name: 'main_file_cache.idx0', bytes: new Uint8Array([3, 4])}
+    ])).resolves.toBe(true);
+    expect(await cache.cacheload('main_file_cache.dat')).toEqual(new Int8Array([1, 2, -1]));
+    const reloaded: Database = await Database.openOptional();
+    expect(await reloaded.cacheload('main_file_cache.dat')).toBeUndefined();
+});
+
+test('session cache keeps private copies so editing a buffer cannot corrupt stored files', async (): Promise<void> => {
+    const cache: Database = new Database(null);
+    const source: Int8Array = new Int8Array([1, 2]);
+    await cache.cachesave('model', source);
+    source[0] = 9;
+    const loaded: Int8Array = (await cache.cacheload('model'))!;
+    expect(loaded[0]).toBe(1);
+    loaded[0] = 8;
+    expect((await cache.cacheload('model'))![0]).toBe(1);
+});
+
 test('a stalled cache open times out and closes a connection that arrives late', async (): Promise<void> => {
     jest.useFakeTimers();
     const opening: Promise<IDBDatabase> = Database.openDatabase(50);

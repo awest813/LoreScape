@@ -67,8 +67,8 @@ CACHE TOOLS ON CHROMEBOOK
 Cache viewer and JagEd run in Chrome without a game-server installation.
 Use Download cache in the online launcher, then Open cache ZIP or files in the
 tool. Or select the extracted folder with Open cache folder. Browser storage
-remembers imports when allowed; on managed devices you may need to reselect the
-ZIP after a restart. The classic cache contains model/tool stores, not a full
+remembers imports when allowed. If storage is blocked, imports work for the
+current tab; reselect the ZIP after reloading. The classic cache contains model/tool stores, not a full
 server. School policy can disable downloads or uploads too.
 
 TROUBLESHOOTING

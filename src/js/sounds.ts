@@ -1,3 +1,4 @@
+import {loadClientChecksums} from './local-worlds';
 import {startClient} from './page-shell';
 import 'style/sounds.scss';
 
@@ -50,9 +51,9 @@ class Sounds extends Client {
             await this.showProgress(10, 'Connecting to fileserver');
 
             await Bzip.load(new Uint8Array(await downloadUrl('bz2.wasm')));
-            this.db = new Database(await Database.openDatabase());
+            this.db = await Database.openOptional();
 
-            const checksums: Packet = new Packet(new Uint8Array(await downloadUrl(`${Client.httpAddress}/crc`)));
+            const checksums: Packet = new Packet(new Uint8Array(await loadClientChecksums(Client.httpAddress, Number(Client.getParameter('world')))));
             for (let i: number = 0; i < 9; i++) {
                 this.archiveChecksums[i] = checksums.g4;
             }
@@ -68,6 +69,7 @@ class Sounds extends Client {
         } catch (err) {
             this.errorLoading = true;
             console.error(err);
+            throw err;
         }
     };
 

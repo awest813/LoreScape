@@ -1,4 +1,4 @@
-import {setPageStatus, showStartupError} from '../../page-shell';
+import {setPageStatus, setReadyStatus, showStartupError} from '../../page-shell';
 import PixMap from '../graphics/PixMap';
 import Draw3D from '../graphics/Draw3D';
 
@@ -142,13 +142,13 @@ export default abstract class GameShell {
             await this.load();
         } catch (error) {
             showStartupError(error);
-            throw error;
+            return;
         }
         if (this.hasLoadingError()) {
             showStartupError();
             return;
         }
-        setPageStatus('Ready. Click or focus the canvas to use the client.');
+        setReadyStatus();
 
         for (let i: number = 0; i < 10; i++) {
             this.otim[i] = performance.now();
