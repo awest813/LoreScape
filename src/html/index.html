@@ -44,12 +44,14 @@
                         <div id="local-server-settings" hidden><label for="local-address">Server web address<input id="local-address" type="url" placeholder="http://localhost:8888" spellcheck="false" autocomplete="url" aria-describedby="local-help" disabled></label><p id="local-help">Use the server's web port. The client tries WebSockets on this port, then port 43595. HTTP servers need the HTTP launcher at localhost:8080; HTTPS Pages needs an HTTPS/WSS server.</p></div>
                         <p id="local-mode-help" class="world-notice" hidden></p>
                     </details>
+                    <details class="cache-export"><summary>Download cache for Chromebook</summary><p>Save the selected world's eight core client archives and checksum table as a ZIP. Open it in ChromeOS Files → Downloads. Maps, music, server code, and offline play are not included. This ZIP uses the browser client format, not the classic cache format used by Cache viewer/JagEd.</p><div class="cache-export-actions"><button id="download-cache" type="button">Download core cache (.zip)</button><button id="cancel-cache-download" type="button" hidden>Cancel download</button></div><p id="cache-download-status" role="status" aria-live="polite">Uses the world and server address selected above.</p></details>
                     <fieldset class="graphics-settings"><legend><span>02</span> Set the atmosphere</legend><div class="graphics-options">
                         <label><input type="radio" name="detail" value="high" checked><span><strong>High detail</strong><small>The full classic look</small></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></label>
                         <label><input type="radio" name="detail" value="low"><span><strong>Low detail</strong><small>Lighter on your device</small></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></label>
                     </div></fieldset>
                     <button class="launch-button" id="launch-button" type="submit"><span>Enter world <span id="selected-world">1</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
                     <p class="launch-account">A 2004Scape account is required. <a href="https://2004scape.org">Account info <span aria-hidden="true"><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></a></p>
+                    <button id="cancel-check" class="cancel-check" type="button" hidden>Cancel connection check</button>
                     <div id="launch-status"></div>
                     <div class="launch-saved"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3h10v11H3Zm2 0v4h6V3M6 10h4v4"/></svg>Your world & graphics are remembered on this device.</div>
                 </form>

@@ -8,9 +8,9 @@ export function validateArchive(bytes: Int8Array, crc: number): void {
     if (Packet.crc32(bytes) !== crc) throw new Error('The game archive does not match the server checksum. Reload to fetch the latest file list; the server must provide matching revision 225 game data.');
 }
 
-export async function downloadArchive(url: string, crc: number): Promise<Int8Array> {
+export async function downloadArchive(url: string, crc: number, signal?: AbortSignal): Promise<Int8Array> {
     try {
-        const bytes: Int8Array = await downloadUrl(url);
+        const bytes: Int8Array = await downloadUrl(url, 30000, signal);
         validateArchive(bytes, crc);
         return bytes;
     } catch (error) {

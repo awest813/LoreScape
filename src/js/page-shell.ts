@@ -22,7 +22,7 @@ header.className = 'lore-header';
 header.innerHTML = `
     <a class="lore-skip" href="#canvas">Skip to client</a>
     <div class="lore-heading"><a class="lore-brand" href="index.html">LoreScape<span>Classic adventures. In your browser.</span></a>
-    <a class="lore-source" href="https://github.com/awest813/LoreScape">Source on GitHub ↗</a></div>
+    <a class="lore-source" href="https://github.com/awest813/LoreScape">Source on GitHub <svg class="lore-outbound" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></a></div>
     <nav class="lore-nav" aria-label="Main navigation">${pages.map(([path, title]): string => `<a href="${path}.html" ${path === pageName ? 'aria-current="page"' : ''}>${title}</a>`).join('')}</nav>
 `;
 document.body.prepend(header);

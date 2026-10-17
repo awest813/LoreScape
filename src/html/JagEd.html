@@ -29,17 +29,13 @@
                 <div class="callout">
                     <div class="grid-x grid-padding-x">
                         <div class="small-12 cell" id="mainPanel">
+                            <div class="lore-file-picker"><label for="cache-files">Open cache files</label><input id="cache-files" type="file" multiple accept=".dat,.idx0,.idx1,.idx2,.idx3,.idx4" aria-describedby="cache-import-help" disabled><p id="cache-import-help">Choose main_file_cache.dat and its .idx0–.idx4 files, or drop them onto this panel. Files stay in your browser.</p></div>
                             <canvas id="canvas" style="display: block; width: 100%;"></canvas>
-                            <div id="helpme" style="display: none;">
-                                You will need to load a cache. It's as easy as dragging-and-dropping right here!<br>
-                                Remember, you can load a new cache by dragging-and-dropping again at any time.<br>
-                                <br>
-                                <p>Select the cache files from your computer and drop them onto the canvas above.</p>
-                            </div>
-                            <a href="#" id="screenshot" style="float: right;" onclick="saveScreenshot();">Take screenshot</a><br><br>
+                            <div id="helpme" style="display: none;"><p>Add the data file and all five index files to start browsing. You can replace files at any time.</p></div>
+                            <a href="#" id="screenshot" hidden style="float: right;" onclick="saveScreenshot();">Take screenshot</a><br><br>
                         </div>
 
-                        <div class="small-6 cell">
+                        <div class="small-12 medium-6 cell">
                             Press <code>r</code> to reset the camera.<br>
                             Press <code>[</code> or <code>]</code> to adjust how much each key press affects the scene.<br>
                             Use <code>left</code> and <code>right</code> arrow keys to rotate the model.<br>
@@ -49,7 +45,7 @@
                             Use <code>1</code> and <code>2</code> to quickly switch to the previous or next model.<br>
                         </div>
 
-                        <div class="small-6 cell">
+                        <div class="small-12 medium-6 cell">
                             <div id="rightPanel"></div>
                         </div>
                     </div>

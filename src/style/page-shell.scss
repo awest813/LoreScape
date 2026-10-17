@@ -23,7 +23,7 @@
 .lore-skip { position: absolute; top: -100px; background: #151b19; padding: 8px; z-index: 10; }
 .lore-skip:focus { top: 4px; }
 .lore-status { background: #1d2722; color: #e1e9df; padding: 12px 20px; text-align: center; }
-.lore-status p { margin: 0; }
+.lore-status p { margin: 0; overflow-wrap: anywhere; }
 .lore-status-error { background: #3b2522; color: #ffe0cc; }
 .lore-status button, .lore-intro button { font: inherit; cursor: pointer; color: #182018; background: #e7c784; border: 0; border-radius: 5px; padding: 8px 16px; font-weight: 650; }
 .lore-status button { margin-top: 10px; }
@@ -43,3 +43,12 @@
 @media (max-width: 480px) { .lore-heading { align-items: start; } .lore-brand { font-size: 25px; } .lore-nav { gap: 0 15px; } .lore-intro { margin-top: 20px; } }
 // Preserve the client's coordinate system while fitting tool canvases to narrow screens.
 canvas#canvas { max-width: 100%; height: auto; }
+
+.lore-file-picker { padding: 16px; margin-bottom: 16px; background: #1d2722; border: 1px solid #536052; color: #edf2e9; font: 14px/1.6 system-ui, sans-serif; }
+.lore-file-picker label { display: block; color: #e7c784; font-weight: 650; margin-bottom: 8px; }
+.lore-file-picker input { display: block; max-width: 100%; color: #edf2e9; height: auto; margin: 0; }
+.lore-file-picker input::file-selector-button { border: 0; border-radius: 4px; background: #e7c784; color: #182018; padding: 8px 12px; margin-right: 10px; cursor: pointer; }
+.lore-file-picker input:focus-visible { outline: 2px solid #e7c784; outline-offset: 4px; }
+.lore-file-picker p { margin: 8px 0 0; color: #c2cebf; font-size: 12px; }
+
+.lore-outbound { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; vertical-align: middle; }

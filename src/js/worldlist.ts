@@ -11,16 +11,17 @@ export type WorldInfo = {
     websocketAddress?: string;
 };
 
-export async function getWorldInfo(secured: boolean, id: number): Promise<WorldInfo> {
+export async function getWorldInfo(secured: boolean, id: number, signal?: AbortSignal): Promise<WorldInfo> {
     if (!Number.isInteger(id) || id < 1 || id > 997) throw new Error('Choose a valid world number.');
     const endpoint: string = WORLD_LIST_URL;
     let worldlist: unknown;
     for (let attempt: number = 0; attempt < 3; attempt++) {
         try {
-            worldlist = JSON.parse(await downloadText(endpoint, 10000));
+            worldlist = JSON.parse(await (signal ? downloadText(endpoint, 10000, signal) : downloadText(endpoint, 10000)));
             if (!Array.isArray(worldlist)) throw new Error('Invalid world list response.');
             break;
         } catch (error) {
+            if (signal?.aborted) throw error;
             if (attempt === 2) throw new Error(`The world service is unavailable at ${endpoint}. ${error instanceof Error ? error.message : ''} Check your network and browser restrictions, or try the official 2004Scape site.`);
             await sleep(1000);
         }

@@ -17,7 +17,7 @@
     .lore-status { padding: 12px; border: 1px solid var(--line); border-radius: 3px; font-size: 12px; background: #172b23; margin-top: 12px; }
     .lore-status-error { background: #3c2722; border-color: #7c5040; }
     .lore-status button { font-size: 12px; }
-    #launch-status .lore-status:not(.lore-status-error) { display: none; }
+    &:not(.is-checking) #launch-status .lore-status:not(.lore-status-error) { display: none; }
 }
 .launcher-skip { position: absolute; left: 16px; top: -80px; z-index: 5; background: #263c2d; padding: 8px 16px; }
 .launcher-skip:focus { top: 12px; }
@@ -250,3 +250,14 @@
 .launcher .lore-status p {
     overflow-wrap: anywhere;
 }
+
+.cancel-check { margin-top: 12px; width: 100%; padding: 10px 14px; border: 1px solid #64735c; background: transparent; color: #d9c49a; }
+.cancel-check:hover { background: #263229; }
+
+.cache-export { margin: 16px 0; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.cache-export summary { color: var(--gold); }
+.cache-export p { font-size: 12px; color: var(--muted); line-height: 1.7; margin-top: 10px; overflow-wrap: anywhere; }
+.cache-export-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.cache-export button { border: 1px solid #64735c; background: #263229; padding: 10px 12px; color: var(--ink); }
+.cache-export button:hover { border-color: var(--gold); }
+.cache-export button:disabled { opacity: .6; cursor: wait; }

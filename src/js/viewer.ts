@@ -1,4 +1,5 @@
-import {setPageStatus, startClient} from './page-shell';
+import {startClient} from './page-shell';
+import {setupCacheImport} from './cache-import';
 import {downloadUrl} from './jagex2/util/JsUtil';
 import 'style/viewer.scss';
 
@@ -72,45 +73,7 @@ class Viewer extends Client {
 
             this.rightPanel = document.getElementById('rightPanel');
 
-            const mainPanel: HTMLElement = document.getElementById('mainPanel') as HTMLElement;
-            if (mainPanel) {
-                mainPanel.ondragover = (event: DragEvent): void => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                };
-
-                mainPanel.ondrop = async (event: DragEvent): Promise<void> => {
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    if (!event.dataTransfer || !event.dataTransfer.files.length) {
-                        return;
-                    }
-
-                    const WHITELIST: string[] = ['main_file_cache.dat', 'main_file_cache.idx0', 'main_file_cache.idx1', 'main_file_cache.idx2', 'main_file_cache.idx3', 'main_file_cache.idx4'];
-
-                    const files: File[] = [];
-                    for (let i: number = 0; i < event.dataTransfer.files.length; i++) {
-                        const file: File = event.dataTransfer.files[i];
-
-                        if (WHITELIST.includes(file.name)) {
-                            files.push(file);
-                        }
-                    }
-
-                    for (let i: number = 0; i < files.length; i++) {
-                        const file: File = files[i];
-
-                        const data: ArrayBuffer = await file.arrayBuffer();
-                        if (!(await this.db?.cachesave(file.name, new Int8Array(data)))) {
-                            setPageStatus('Cannot import cache files because browser storage is unavailable. Enable site storage and reload before importing again.', true);
-                            return;
-                        }
-                    }
-
-                    await this.init();
-                };
-            }
+            setupCacheImport(this.db, this.init);
 
             await this.init();
         } catch (err) {
@@ -152,6 +115,7 @@ class Viewer extends Client {
             const helpMe: HTMLElement = document.getElementById('helpme') as HTMLElement;
             helpMe.style.display = 'block';
             canvas.style.display = 'none';
+            document.getElementById('screenshot')!.hidden = true;
             return;
         }
 
@@ -165,12 +129,14 @@ class Viewer extends Client {
             const helpMe: HTMLElement = document.getElementById('helpme') as HTMLElement;
             helpMe.style.display = 'block';
             canvas.style.display = 'none';
+            document.getElementById('screenshot')!.hidden = true;
             return;
         }
 
         const helpMe: HTMLElement = document.getElementById('helpme') as HTMLElement;
         helpMe.style.display = 'none';
         canvas.style.display = 'block';
+        document.getElementById('screenshot')!.hidden = false;
 
         this.jagStore = new DiskStore(dat, idx0, 0);
         this.modelStore = new DiskStore(dat, idx1, 1);

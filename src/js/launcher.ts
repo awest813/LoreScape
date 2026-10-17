@@ -20,7 +20,12 @@ const parameters: URLSearchParams = new URLSearchParams(window.location.search);
 let preferences: LauncherPreferences = {...defaultPreferences};
 let worlds: WorldInfo[] = [];
 let started: boolean = false;
-let checking: boolean = false;
+let pendingCheck: AbortController | undefined;
+let cacheDownload: AbortController | undefined;
+const downloadCacheButton: HTMLButtonElement = document.getElementById('download-cache') as HTMLButtonElement;
+const cancelDownloadButton: HTMLButtonElement = document.getElementById('cancel-cache-download') as HTMLButtonElement;
+const downloadStatus: HTMLElement = document.getElementById('cache-download-status')!;
+const cancelCheckButton: HTMLButtonElement = document.getElementById('cancel-check') as HTMLButtonElement;
 
 try {
     preferences = parsePreferences(localStorage.getItem(storageKey));
@@ -62,7 +67,24 @@ function updateLocalControls(): void {
     document.querySelector<HTMLElement>('.launch-account')!.hidden = isLocalWorld(id);
 }
 
+function cancelCheck(): void {
+    if (!pendingCheck) return;
+    pendingCheck.abort();
+    pendingCheck = undefined;
+    launchButton.disabled = false;
+    cancelCheckButton.hidden = true;
+    form.removeAttribute('aria-busy');
+    document.body.classList.remove('is-checking');
+    const url: URL = new URL(window.location.href);
+    url.searchParams.delete('world');
+    url.searchParams.delete('local');
+    window.history.replaceState(null, '', url);
+    setPageStatus('Connection check cancelled. Choose a world and enter when you are ready.');
+}
+
 function chooseWorld(id: number): void {
+    cancelCheck();
+    cancelCacheDownload();
     preferences.world = id;
     worldInput.value = String(id);
     document.getElementById('selected-world')!.textContent = String(id);
@@ -120,7 +142,8 @@ async function refreshWorlds(): Promise<void> {
 }
 
 async function launch(): Promise<void> {
-    if (checking) return;
+    cancelCacheDownload();
+    if (pendingCheck) return;
     if (!form.reportValidity()) return;
     const id: number = Number(worldInput.value);
     if (!validWorld(id)) return;
@@ -128,6 +151,8 @@ async function launch(): Promise<void> {
     preferences.detail = (form.elements.namedItem('detail') as RadioNodeList).value === 'low' ? 'low' : 'high';
     if (id === 0) preferences.localAddress = localAddress.value;
     remember();
+    const selectedDetail: 'high' | 'low' = preferences.detail;
+    const selectedAddress: string = localAddress.value;
     const url: URL = new URL(window.location.href);
     url.searchParams.set('world', String(id));
     url.searchParams.set('detail', preferences.detail);
@@ -139,20 +164,32 @@ async function launch(): Promise<void> {
         return;
     }
     if (isLocalWorld(id)) {
-        checking = true;
+        const check: AbortController = new AbortController();
+        pendingCheck = check;
+        cancelCheckButton.hidden = false;
+        form.setAttribute('aria-busy', 'true');
         launchButton.disabled = true;
         setPageStatus('Checking local world files…');
+        document.body.classList.add('is-checking');
         try {
+            const files: string = id === 0 ? localWorldAddresses(selectedAddress, window.location.protocol === 'https:').files : 'data/pack/client';
+            window.history.replaceState(null, '', url);
             if (id >= 998 && typeof RTCPeerConnection === 'undefined') throw new Error('Browser worlds require WebRTC support. Use a current browser or choose Local server.');
-            if (id === 999) await checkWorkerBundle();
-            const files: string = id === 0 ? localWorldAddresses(localAddress.value, window.location.protocol === 'https:').files : 'data/pack/client';
-            await loadClientChecksums(files, id);
+            if (id === 999) await checkWorkerBundle(check.signal);
+            await loadClientChecksums(files, id, check.signal);
+            if (check.signal.aborted) return;
         } catch (error) {
+            if (check.signal.aborted) return;
             showStartupError(error);
             launchButton.disabled = false;
             return;
         } finally {
-            checking = false;
+            if (pendingCheck === check) {
+                pendingCheck = undefined;
+                cancelCheckButton.hidden = true;
+                form.removeAttribute('aria-busy');
+                document.body.classList.remove('is-checking');
+            }
         }
     }
     started = true;
@@ -161,10 +198,11 @@ async function launch(): Promise<void> {
     stage.hidden = false;
     document.body.classList.add('has-client');
     document.getElementById('client-heading')!.textContent = worldLabel(id);
-    document.getElementById('client-detail')!.textContent = preferences.detail === 'low' ? 'Low detail · Classic client' : 'High detail · Classic client';
+    document.getElementById('client-detail')!.textContent = selectedDetail === 'low' ? 'Low detail · Classic client' : 'High detail · Classic client';
     document.getElementById('client-status')!.append(connectionStatus);
     setPageStatus('Loading the client…');
     stage.scrollIntoView({block: 'start'});
+    (document.getElementById('canvas') as HTMLCanvasElement).focus({preventScroll: true});
     try {
         await import(/* webpackChunkName: "game-client" */ './game');
     } catch (error) {
@@ -178,10 +216,18 @@ form.addEventListener('submit', (event: SubmitEvent): void => {
     void launch();
 });
 worldInput.addEventListener('input', (): void => {
+    cancelCheck();
+    cancelCacheDownload();
     const id: number = Number(worldInput.value);
     if (worldInput.value && validWorld(id)) chooseWorld(id);
 });
+cancelCheckButton.addEventListener('click', (): void => {
+    cancelCheck();
+    launchButton.focus();
+});
 form.addEventListener('change', (): void => {
+    cancelCheck();
+    cancelCacheDownload();
     preferences.detail = (form.elements.namedItem('detail') as RadioNodeList).value === 'low' ? 'low' : 'high';
     remember();
 });
@@ -189,7 +235,10 @@ for (const button of document.querySelectorAll<HTMLButtonElement>('.local-world-
     button.addEventListener('click', (): void => chooseWorld(Number(button.dataset.world)));
 }
 localAddress.addEventListener('input', (): void => {
+    cancelCheck();
+    cancelCacheDownload();
     preferences.localAddress = localAddress.value;
+    setPageStatus('Server address updated. Enter world 0 to check this server.');
     remember();
 });
 filter.addEventListener('change', renderWorlds);
@@ -219,5 +268,58 @@ else {
         list.setAttribute('aria-busy', 'false');
         document.getElementById('world-count')!.textContent = 'Local world selected';
         list.textContent = 'Select Refresh to browse public worlds.';
+    }
+}
+
+function cancelCacheDownload(): void {
+    if (!cacheDownload) return;
+    cacheDownload.abort();
+    cacheDownload = undefined;
+    downloadCacheButton.disabled = false;
+    downloadCacheButton.removeAttribute('aria-busy');
+    cancelDownloadButton.hidden = true;
+    downloadStatus.textContent = 'Download cancelled. No ZIP was saved.';
+}
+
+downloadCacheButton.addEventListener('click', (): void => {
+    void exportCache();
+});
+cancelDownloadButton.addEventListener('click', (): void => {
+    cancelCacheDownload();
+    downloadCacheButton.focus();
+});
+
+async function exportCache(): Promise<void> {
+    if (cacheDownload || !form.reportValidity()) return;
+    cancelCheck();
+    const world: number = Number(worldInput.value);
+    if (!validWorld(world)) return;
+    const address: string = localAddress.value;
+    const controller: AbortController = new AbortController();
+    cacheDownload = controller;
+    downloadCacheButton.disabled = true;
+    downloadCacheButton.setAttribute('aria-busy', 'true');
+    cancelDownloadButton.hidden = false;
+    downloadStatus.textContent = `Finding the cache for ${worldLabel(world)}…`;
+    try {
+        const downloader: typeof import('./cache-download') = await import(/* webpackChunkName: "cache-download" */ './cache-download');
+        controller.signal.throwIfAborted();
+        const source: import('./cache-download').CacheSource = await downloader.resolveCacheSource(world, address, window.location.protocol === 'https:', controller.signal);
+        const blob: Blob = await downloader.downloadServerCache(source, controller.signal, (message: string): void => {
+            if (!controller.signal.aborted) downloadStatus.textContent = message;
+        });
+        controller.signal.throwIfAborted();
+        downloader.saveCacheZip(blob, world);
+        downloadStatus.textContent = `World ${world} core cache ZIP sent to your browser (${(blob.size / 1024 / 1024).toFixed(1)} MB). Save it if prompted, then open Files → Downloads. This does not enable offline play.`;
+    } catch (error) {
+        if (!controller.signal.aborted) downloadStatus.textContent = `Cache download failed. ${error instanceof Error ? error.message : 'Check the selected server and try again.'} No ZIP was saved.`;
+    } finally {
+        if (cacheDownload === controller) {
+            cacheDownload = undefined;
+            downloadCacheButton.disabled = false;
+            downloadCacheButton.removeAttribute('aria-busy');
+            cancelDownloadButton.hidden = true;
+            if (document.activeElement === document.body) downloadCacheButton.focus();
+        }
     }
 }

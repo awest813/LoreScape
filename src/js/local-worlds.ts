@@ -8,10 +8,10 @@ export function worldLabel(world: number): string {
     return world === 0 ? 'Local server' : world === 998 ? 'Join a host' : world === 999 ? 'Host in browser' : `World ${world}`;
 }
 
-export async function loadClientChecksums(address: string, world: number): Promise<Int8Array> {
+export async function loadClientChecksums(address: string, world: number, signal?: AbortSignal): Promise<Int8Array> {
     const endpoint: string = `${address}/crc`;
     try {
-        const bytes: Int8Array = await downloadUrl(endpoint, 10000);
+        const bytes: Int8Array = await downloadUrl(endpoint, 10000, signal);
         if (bytes.length !== 36) throw new Error(`Expected a 36-byte CRC table; received ${bytes.length} bytes. Check that this URL serves game data, not an HTML page.`);
         return bytes;
     } catch (error) {
@@ -25,8 +25,11 @@ export async function loadClientChecksums(address: string, world: number): Promi
     }
 }
 
-export async function checkWorkerBundle(): Promise<void> {
+export async function checkWorkerBundle(signal?: AbortSignal): Promise<void> {
     const controller: AbortController = new AbortController();
+    const cancel = (): void => controller.abort();
+    signal?.addEventListener('abort', cancel, {once: true});
+    if (signal?.aborted) cancel();
     const timer: ReturnType<typeof setTimeout> = setTimeout((): void => controller.abort(), 10000);
     try {
         const response: Response = await fetch('worker.js', {signal: controller.signal});
@@ -38,5 +41,6 @@ export async function checkWorkerBundle(): Promise<void> {
         );
     } finally {
         clearTimeout(timer);
+        signal?.removeEventListener('abort', cancel);
     }
 }

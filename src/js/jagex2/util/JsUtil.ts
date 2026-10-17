@@ -1,7 +1,10 @@
 export const sleep = async (ms: number): Promise<void> => new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, ms));
 // Keep the timeout active until the response body has been consumed.
-async function download(url: string, binary: boolean, timeoutMs: number): Promise<ArrayBuffer | string> {
+async function download(url: string, binary: boolean, timeoutMs: number, signal?: AbortSignal): Promise<ArrayBuffer | string> {
     const controller: AbortController = new AbortController();
+    const cancel = (): void => controller.abort();
+    signal?.addEventListener('abort', cancel, {once: true});
+    if (signal?.aborted) cancel();
     const timeout: ReturnType<typeof setTimeout> = setTimeout((): void => controller.abort(), timeoutMs);
     try {
         const response: Response = await fetch(url, {signal: controller.signal});
@@ -9,15 +12,16 @@ async function download(url: string, binary: boolean, timeoutMs: number): Promis
         return binary ? await response.arrayBuffer() : await response.text();
     } finally {
         clearTimeout(timeout);
+        signal?.removeEventListener('abort', cancel);
     }
 }
 
-export async function downloadUrl(url: string, timeoutMs: number = 30000): Promise<Int8Array> {
-    return new Int8Array((await download(url, true, timeoutMs)) as ArrayBuffer);
+export async function downloadUrl(url: string, timeoutMs: number = 30000, signal?: AbortSignal): Promise<Int8Array> {
+    return new Int8Array((await download(url, true, timeoutMs, signal)) as ArrayBuffer);
 }
 
-export async function downloadText(url: string, timeoutMs: number = 30000): Promise<string> {
-    return (await download(url, false, timeoutMs)) as string;
+export async function downloadText(url: string, timeoutMs: number = 30000, signal?: AbortSignal): Promise<string> {
+    return (await download(url, false, timeoutMs, signal)) as string;
 }
 
 export function arraycopy(src: Int32Array | Uint8Array, srcPos: number, dst: Int32Array | Uint8Array, dstPos: number, length: number): void {
