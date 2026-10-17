@@ -1,8 +1,9 @@
 import {setPageStatus} from './page-shell';
+import {cacheNames, readCacheFolder, readCacheZip} from './cache-bundle';
 import type Database from './jagex2/io/Database';
 
-type CacheWriter = Pick<Database, 'cachesave'>;
-const supportedNames: Set<string> = new Set(['main_file_cache.dat', 'main_file_cache.idx0', 'main_file_cache.idx1', 'main_file_cache.idx2', 'main_file_cache.idx3', 'main_file_cache.idx4']);
+type CacheWriter = Pick<Database, 'cachesave'> & Partial<Pick<Database, 'cachesaveMany'>>;
+const supportedNames: Set<string> = new Set(cacheNames);
 
 export async function importCacheFiles(files: ArrayLike<File>, cache: CacheWriter | null): Promise<number> {
     const supported: File[] = Array.from(files).filter((file: File): boolean => supportedNames.has(file.name));
@@ -15,35 +16,60 @@ export async function importCacheFiles(files: ArrayLike<File>, cache: CacheWrite
     return supported.length;
 }
 
+export async function importCacheSelection(files: ArrayLike<File>, cache: CacheWriter | null, folder: boolean = false): Promise<number> {
+    const selected: File[] = Array.from(files);
+    if (!folder && !selected.some((file: File): boolean => !!file.webkitRelativePath)) {
+        const zips: File[] = selected.filter((file: File): boolean => file.name.toLowerCase().endsWith('.zip'));
+        if (!zips.length) return importCacheFiles(selected, cache);
+        if (selected.length !== 1) throw new Error('Choose one cache ZIP at a time, or select a cache folder.');
+    }
+    const bundle: import('./cache-bundle').CacheFile[] = folder || selected.some((file: File): boolean => !!file.webkitRelativePath) ? await readCacheFolder(selected) : await readCacheZip(selected[0]);
+    if (cache?.cachesaveMany) {
+        if (!(await cache.cachesaveMany(bundle))) throw new Error('Cannot save this cache. Check browser site storage, reload, and import it again.');
+    } else {
+        for (const file of bundle) {
+            if (!(await cache?.cachesave(file.name, new Int8Array(file.bytes)))) throw new Error('Cannot save this cache. Check browser site storage, reload, and import it again.');
+        }
+    }
+    return bundle.length;
+}
+
 export function setupCacheImport(cache: CacheWriter | null, refresh: () => Promise<void>): void {
     const input: HTMLInputElement | null = document.querySelector('#cache-files');
+    const folder: HTMLInputElement | null = document.querySelector('#cache-folder');
     const panel: HTMLElement | null = document.getElementById('mainPanel');
     if (!input || !panel) return;
+    const inputs: HTMLInputElement[] = folder ? [input, folder] : [input];
     let importing: boolean = false;
-    input.disabled = false;
-    const load = async (files: FileList | null): Promise<void> => {
+    for (const control of inputs) control.disabled = false;
+    const load = async (files: FileList | null, isFolder: boolean = false): Promise<void> => {
         if (importing || !files?.length) return;
         importing = true;
-        const restoreFocus: boolean = document.activeElement === input;
-        input.disabled = true;
+        const focused: HTMLInputElement | undefined = inputs.find((control: HTMLInputElement): boolean => document.activeElement === control);
+        for (const control of inputs) control.disabled = true;
         panel.setAttribute('aria-busy', 'true');
-        setPageStatus('Importing cache files…');
+        setPageStatus('Reading and importing cache…');
         try {
-            const count: number = await importCacheFiles(files, cache);
+            const count: number = await importCacheSelection(files, cache, isFolder);
             await refresh();
             setPageStatus(`Imported ${count} cache ${count === 1 ? 'file' : 'files'}.`);
         } catch (error) {
-            setPageStatus(error instanceof Error ? error.message : 'Unable to import these cache files.', true);
+            setPageStatus(error instanceof Error ? error.message : 'Unable to import this cache.', true);
         } finally {
             importing = false;
-            input.disabled = false;
-            input.value = '';
+            for (const control of inputs) {
+                control.disabled = false;
+                control.value = '';
+            }
             panel.removeAttribute('aria-busy');
-            if (restoreFocus && document.activeElement === document.body) input.focus();
+            if (focused && document.activeElement === document.body) focused.focus();
         }
     };
     input.addEventListener('change', (): void => {
         void load(input.files);
+    });
+    folder?.addEventListener('change', (): void => {
+        void load(folder.files, true);
     });
     panel.ondragover = (event: DragEvent): void => {
         event.preventDefault();

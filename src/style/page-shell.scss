@@ -52,3 +52,5 @@ canvas#canvas { max-width: 100%; height: auto; }
 .lore-file-picker p { margin: 8px 0 0; color: #c2cebf; font-size: 12px; }
 
 .lore-outbound { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; vertical-align: middle; }
+
+.lore-file-picker input + label { margin-top: 14px; }

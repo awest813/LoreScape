@@ -161,6 +161,8 @@ class JagEd extends Client {
         Draw3D.initPool(20);
 
         await this.showProgress(20, 'Loading models...');
+        Model.metadata = null;
+        this.model.built = null;
         for (let i: number = 0; i < this.modelStore.fileCount; i++) {
             const data: Uint8Array | Jagfile | null = this.modelStore.read(i);
 
@@ -175,7 +177,7 @@ class JagEd extends Client {
             const ul: HTMLUListElement = document.createElement('ul');
             ul.id = 'modelList';
             ul.className = 'list-group';
-            this.rightPanel.appendChild(ul);
+            this.rightPanel.replaceChildren(ul);
 
             for (let i: number = 0; i < this.modelStore.fileCount; i++) {
                 const li: HTMLLIElement = document.createElement('li');

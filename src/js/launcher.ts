@@ -318,7 +318,7 @@ async function exportCache(): Promise<void> {
         );
         controller.signal.throwIfAborted();
         downloader.saveCacheZip(blob, world, format);
-        downloadStatus.textContent = `World ${world} ${format === 'classic' ? 'tools' : 'core'} cache ZIP sent to your browser (${(blob.size / 1024 / 1024).toFixed(1)} MB). Save it if prompted, then open Files → Downloads. This does not enable offline play.`;
+        downloadStatus.textContent = `World ${world} ${format === 'classic' ? 'tools' : 'core'} cache ZIP sent to your browser (${(blob.size / 1024 / 1024).toFixed(1)} MB). Save it if prompted, then open Files → Downloads. ${format === 'classic' ? 'Open this ZIP directly in Cache viewer or JagEd, or choose its extracted folder.' : 'This does not enable offline play.'}`;
     } catch (error) {
         if (!controller.signal.aborted) downloadStatus.textContent = `Cache download failed. ${error instanceof Error ? error.message : 'Check the selected server and try again.'} No ZIP was saved.`;
     } finally {
@@ -337,6 +337,6 @@ cacheFormat.addEventListener('change', (): void => {
     const classic: boolean = cacheFormat.value !== 'core';
     downloadCacheButton.textContent = classic ? 'Download classic cache (.zip)' : 'Download core cache (.zip)';
     document.getElementById('cache-format-help')!.textContent = classic
-        ? 'Save main_file_cache.dat and .idx0–.idx4 as a ZIP for model inspection in Cache viewer/JagEd. Extract it in ChromeOS Files → Downloads, then choose all six cache files in the tool. Animation, music, and map stores are excluded.'
+        ? 'Save a classic cache ZIP for model inspection in Cache viewer/JagEd. Open the ZIP directly in either tool, or choose its extracted folder. All six cache files load automatically. Animation, music, and map stores are excluded.'
         : 'Save the eight startup archives and checksum table in the browser client format. Maps and music are excluded. This format is for browser server bundles; use Classic cache for Cache viewer/JagEd.';
 });

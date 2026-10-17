@@ -48,6 +48,21 @@ export default class Database {
         return key !== undefined;
     };
 
+    cachesaveMany = async (files: {name: string; bytes: Uint8Array}[]): Promise<boolean> => {
+        if (!files.length) return true;
+        const key: IDBValidKey | undefined = await this.transaction<IDBValidKey>('readwrite', (store: IDBObjectStore): IDBRequest<IDBValidKey> => {
+            try {
+                let last: IDBRequest<IDBValidKey> = store.put(new Int8Array(files[0].bytes), files[0].name);
+                for (const file of files.slice(1)) last = store.put(new Int8Array(file.bytes), file.name);
+                return last;
+            } catch (error) {
+                store.transaction.abort();
+                throw error;
+            }
+        });
+        return key !== undefined;
+    };
+
     // Cache failures must not interrupt startup, map downloads, or unawaited saves.
     private async transaction<T>(mode: IDBTransactionMode, action: (store: IDBObjectStore) => IDBRequest<T>): Promise<T | undefined> {
         if (!this.available) return undefined;

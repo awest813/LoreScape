@@ -63,3 +63,22 @@ test('successful writes wait for transaction commit', async (): Promise<void> =>
     await saving;
     expect(committed).toBe(true);
 });
+
+test('a bundle write error aborts the whole transaction and resolves false', async (): Promise<void> => {
+    const abort: jest.Mock = jest.fn();
+    const put: jest.Mock = jest
+        .fn()
+        .mockReturnValueOnce({})
+        .mockImplementationOnce((): never => {
+            throw new Error('Quota exceeded');
+        });
+    const tx: IDBTransaction = {objectStore: (): object => ({put, transaction: {abort}})} as unknown as IDBTransaction;
+    const cache: Database = new Database({transaction: (): IDBTransaction => tx} as unknown as IDBDatabase);
+    await expect(
+        cache.cachesaveMany([
+            {name: 'main_file_cache.dat', bytes: new Uint8Array([1])},
+            {name: 'main_file_cache.idx0', bytes: new Uint8Array([2])}
+        ])
+    ).resolves.toBe(false);
+    expect(abort).toHaveBeenCalledTimes(1);
+});

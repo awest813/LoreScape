@@ -42,10 +42,11 @@ export async function createToolsCacheZip(archives: Uint8Array[], world: number,
 World: ${world}
 File service: ${address}
 
-On Chromebook, open this ZIP in Files > Downloads and extract all six
-main_file_cache files. Open Cache viewer or JagEd on the LoreScape website,
-choose Open cache files, and select main_file_cache.dat and .idx0 through .idx4
-together. Files are imported into your browser; no Linux container is needed.
+On Chromebook, open Cache viewer or JagEd on the LoreScape website and choose
+this ZIP directly with Open cache ZIP or files. Alternatively, extract it in
+Files > Downloads and select Open cache folder. All six main_file_cache files
+are found automatically, and the saved cache loads when you return. No Linux
+container is needed. Imported files stay in your browser.
 
 Includes the revision 225 archives in index 0 and models converted to the
 classic model format in index 1. Indices 2, 3 and 4 are intentionally empty:
