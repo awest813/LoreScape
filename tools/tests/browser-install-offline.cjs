@@ -128,7 +128,8 @@ const path = require('node:path');
         stopped = true;
         const previousRequests = requests;
         await context.setOffline(true);
-        await page.goto(base + 'offline/coop.html');
+        await page.goto(base);
+        await page.waitForURL(base + 'offline/coop.html');
         await page.waitForFunction(() => document.querySelector('#installOffline').textContent === 'Play offline');
         await page.locator('#installOffline').click();
         await page.waitForFunction(() => window.LoreCoop?.characterName === 'adventurer', null, {timeout: 90000});
@@ -150,7 +151,7 @@ const path = require('node:path');
         assert.equal(await page.locator('#worlds').inputValue(), worldId);
         assert(await page.evaluate(() => caches.has('lorescape-assets-v1-other-app')));
         assert.deepEqual(errors, []);
-        console.log('PASS: bookmarked launcher, same character, real gameplay and saving work with the HTTP server stopped; removal keeps saves and unrelated caches');
+        console.log('PASS: usual launcher address, same character, real gameplay and saving work with the HTTP server stopped; removal keeps saves and unrelated caches');
     } finally {
         clearInterval(progressTimer);
         await browser.close();

@@ -40,6 +40,7 @@ if (process.argv.includes('--offline')) assert(fs.existsSync(offlineDirectory), 
 if (fs.existsSync(offlineDirectory)) {
     const offlineHtml = fs.readFileSync(path.join(offlineDirectory, 'coop.html'), 'utf8');
     assert.match(offlineHtml, /id="installOffline"/);
+    assert(fs.existsSync(path.join(root, 'offline-launcher-sw.js')), 'Offline navigation fallback is missing');
     assert(!/(?:src|href)="\//.test(offlineHtml), 'Offline launcher assets must support project subdirectories');
     const offlineManifest = JSON.parse(fs.readFileSync(path.join(offlineDirectory, 'manifest.json'), 'utf8'));
     assert.equal(offlineManifest.scope, './');

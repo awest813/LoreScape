@@ -24,6 +24,10 @@ try {
     if (mode === 'solo') {
         for (const file of ['coop.html', 'coop/lobby.mjs', 'coop/style.css']) copyFileSync(path.join(root, 'src/solo', file), path.join(staging, file));
     }
+    if (pages) {
+        const lobby = path.join(staging, 'coop.html');
+        writeFileSync(lobby, readFileSync(lobby, 'utf8').replace('</head>', '<meta name="lorescape-offline-parent" content="../offline-launcher-sw.js" /></head>'));
+    }
     writeFileSync(path.join(staging, 'hosting-mode.json'), JSON.stringify({version: 1, mode}) + '\n');
     run(['tools/offline-manifest.mjs', staging, '--strict']);
     // Upstream also copies editor/map-viewer packs; ship only the game allowlist.

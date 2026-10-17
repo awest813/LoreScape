@@ -901,6 +901,18 @@ action('installOffline', async () => {
     await worldsReady;
     if (session || opening) throw new Error('Return to the launcher before starting another adventure');
     if (!offlineReady && !(await downloadOffline())) return;
+    const parentWorker = document.querySelector('meta[name="lorescape-offline-parent"]')?.content;
+    if (parentWorker) {
+        try {
+            const script = new URL(parentWorker, location.href);
+            const scope = new URL('./', script);
+            const existing = await navigator.serviceWorker.getRegistration(scope);
+            // Preserve any independently configured worker for the main website.
+            if (!existing || existing.active?.scriptURL === script.href) await navigator.serviceWorker.register(script, {scope: scope.pathname});
+        } catch {
+            // The cached offline launcher remains available if the parent host blocks registration.
+        }
+    }
     await playSolo(true);
 });
 action('removeOffline', async () => {
