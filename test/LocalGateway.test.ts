@@ -23,6 +23,14 @@ beforeAll(async (): Promise<void> => {
     root = mkdtempSync(join(tmpdir(), 'lorescape-kit-'));
     mkdirSync(join(root, 'client'));
     mkdirSync(join(root, 'data/config'), {recursive: true});
+    mkdirSync(join(root, 'data/pack/mapview'), {recursive: true});
+    mkdirSync(join(root, 'data/pack/server'), {recursive: true});
+    mkdirSync(join(root, 'data/src/pack'), {recursive: true});
+    writeFileSync(join(root, 'data/pack/mapview/worldmap.jag'), 'map archive');
+    writeFileSync(join(root, 'data/pack/server/mesanim.dat'), 'chat animations');
+    writeFileSync(join(root, 'data/src/pack/npc.pack'), '0=test_npc');
+    writeFileSync(join(root, 'data/src/pack/obj.pack'), '0=test_item');
+    writeFileSync(join(root, 'data/src/pack/synth.pack'), '0=test_sound');
     const {publicKey} = generateKeyPairSync('rsa', {modulusLength: 1024, publicKeyEncoding: {type: 'spki', format: 'pem'}, privateKeyEncoding: {type: 'pkcs1', format: 'pem'}});
     writeFileSync(join(root, 'data/config/public.pem'), publicKey);
     writeFileSync(join(root, 'client/index.html'), '<!doctype html><title>kit</title>');
@@ -41,6 +49,27 @@ beforeAll(async (): Promise<void> => {
     const backendPort: number = await listen(backend);
     gateway = createGateway({client: join(root, 'client'), server: root, backendPort, publicOrigin: 'https://play.example.com'});
     address = `http://127.0.0.1:${await listen(gateway)}`;
+});
+
+test.each(['playground', 'items', 'sounds', 'interface-editor', 'mapview', 'mesanim'])('connects the downloaded %s tool to the local server by default', async (tool: string): Promise<void> => {
+    const response: Response = await fetch(`${address}/${tool}.html`, {redirect: 'manual'});
+    const url: URL = new URL(response.headers.get('location')!, address);
+    expect(response.status).toBe(302);
+    expect(url.searchParams.get('world')).toBe('0');
+    expect(url.searchParams.get('setup')).toBe('1');
+    expect(url.searchParams.get('local')).toBe('https://play.example.com');
+    const explicit: Response = await fetch(`${address}/${tool}.html?world=2`, {redirect: 'manual'});
+    expect(explicit.headers.has('location')).toBe(false);
+});
+
+test('serves only the extra data files required by the local tools', async (): Promise<void> => {
+    expect(await (await fetch(`${address}/worldmap.jag`)).text()).toBe('map archive');
+    expect(await (await fetch(`${address}/server/mesanim.dat`)).text()).toBe('chat animations');
+    expect(await (await fetch(`${address}/tool-data/npc.pack`)).text()).toBe('0=test_npc');
+    expect(await (await fetch(`${address}/tool-data/obj.pack`)).text()).toBe('0=test_item');
+    expect(await (await fetch(`${address}/tool-data/sound.pack`)).text()).toBe('0=test_sound');
+    expect((await fetch(`${address}/server/script.dat`)).status).toBe(404);
+    expect((await fetch(`${address}/tool-data/../data/config/private.pem`)).status).toBe(404);
 });
 afterAll(async (): Promise<void> => {
     for (const socket of sockets.clients) socket.terminate();

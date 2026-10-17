@@ -22,7 +22,7 @@ import Bzip from './vendor/bzip';
 import Pix24 from './jagex2/graphics/Pix24';
 import PixMap from './jagex2/graphics/PixMap';
 import {Client} from './client';
-import {setupConfiguration} from './configuration';
+import {packFileUrl, setupConfiguration} from './configuration';
 
 class Items extends Client {
     // id -> name for cache files
@@ -111,7 +111,7 @@ class Items extends Client {
 
         items.innerHTML = '';
 
-        this.packfiles[1] = await this.loadPack(`${Client.githubRepository}/data/src/pack/obj.pack`);
+        this.packfiles[1] = await this.loadPack(packFileUrl('obj'));
 
         const command: HTMLInputElement = document.createElement('input');
         command.type = 'text';

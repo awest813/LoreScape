@@ -2,7 +2,7 @@
 module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
-    testPathIgnorePatterns: ['/node_modules/', '/work/'],
+    testPathIgnorePatterns: ['/node_modules/', '<rootDir>/work/'],
     modulePathIgnorePatterns: ['<rootDir>/work/'],
     transform: {
         '^.+\\.[tj]sx?$': [

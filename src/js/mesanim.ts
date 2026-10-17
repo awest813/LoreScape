@@ -30,7 +30,7 @@ import {canvas} from './jagex2/graphics/Canvas';
 import Pix8 from './jagex2/graphics/Pix8';
 import Bzip from './vendor/bzip';
 import {Client} from './client';
-import {setupConfiguration} from './configuration';
+import {packFileUrl, setupConfiguration} from './configuration';
 
 // noinspection JSSuspiciousNameCombination
 class Mesanim extends Client {
@@ -221,7 +221,7 @@ class Mesanim extends Client {
     //
 
     async populateNpcSelector(): Promise<void> {
-        this.packfiles[1] = await this.loadPack(`${Client.githubRepository}/data/src/pack/npc.pack`);
+        this.packfiles[1] = await this.loadPack(packFileUrl('npc'));
 
         const npcs: HTMLSelectElement | null = document.querySelector('#npcs');
         if (!npcs) {

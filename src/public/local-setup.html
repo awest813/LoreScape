@@ -9,10 +9,10 @@
 <h2>Install on Windows, macOS or Linux</h2>
 <ol><li>Install <a href="https://nodejs.org/en/download">Node.js 22.22.1 or newer</a>, <a href="https://git-scm.com/downloads">Git</a>, and <a href="https://adoptium.net/temurin/releases/?version=17">Java 17 or newer</a>. Linux may also need Python 3, make and a C++ compiler for native packages.</li>
 <li>Extract the entire ZIP into a writable folder. Open a terminal in that extracted folder.</li>
-<li>Run <code>node setup.cjs</code>. Keep internet connected: it downloads the pinned <a href="https://github.com/2004scape/Server">2004Scape server</a> and its dependencies.</li>
+<li>Run <code>node setup.cjs</code>. Keep internet connected: it downloads the pinned <a href="https://github.com/2004scape/Server">2004Scape server</a>, installs dependencies, and builds game and tool data. Allow several minutes.</li>
 <li>When setup finishes, run <code>node start.cjs</code>. The first launch packs game data and may take several minutes. Wait for <strong>World ready</strong>.</li>
 <li>Open <a href="http://127.0.0.1:8080/">http://127.0.0.1:8080/</a> on that computer. Keep the terminal open while playing. Select <strong>Existing user</strong>; a new name creates a save in this development world. Use a throwaway password: this private mode has no account authentication.</li></ol>
-<p>Next time, run <code>node start.cjs</code>. Stop with Ctrl+C. Saves are in <code>server/data/players/</code>; back them up before reinstalling. Setup preserves existing saves, settings and installation keys.</p>
+<p>Next time, run <code>node start.cjs</code>. Stop with Ctrl+C. Stop the server before re-running setup. Saves are in <code>server/data/players/</code>; back them up before reinstalling. Setup preserves existing saves, settings and installation keys. The built-in tools connect to your local world automatically, including the map and chat-animation data built during setup.</p>
 <h2 id="chromebook">Locked-down Chromebook options</h2>
 <p><strong>Without Linux support, a managed Chromebook cannot install this game server.</strong> Downloading a cache or opening the ZIP will not start a world. These options use Chrome without an extension:</p>
 <ul><li><strong>Play a public world:</strong> return to the launcher, choose an available world and use low detail for a lighter client. The world’s services must be online and permitted by your administrator.</li>

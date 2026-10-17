@@ -57,6 +57,8 @@ try {
     if (!fs.existsSync(path.join(server, 'package-lock.json'))) fs.copyFileSync(path.join(root, 'server-package-lock.json'), path.join(server, 'package-lock.json'));
     if (process.platform === 'win32') run('cmd.exe', ['/d', '/s', '/c', 'npm ci --include=dev --no-fund --no-audit'], server);
     else run('npm', ['ci', '--include=dev', '--no-fund', '--no-audit'], server);
+    console.log('Building game and tool data. First setup can take several minutes.');
+    run(process.execPath, ['--import', 'tsx', '--input-type=module', '--eval', "await import('./tools/pack/Build.ts'); const {packWorldmap} = await import('./tools/pack/map/Worldmap.ts'); await packWorldmap();"], server);
     fs.writeFileSync(path.join(root, '.installed'), revision + '\n');
     console.log('Setup complete. Run: node start.cjs');
 } catch (error) {

@@ -11,8 +11,9 @@ WINDOWS / MAC / LINUX
    Linux may also need Python 3, make, and a C++ compiler for native dependencies.
 2. Extract the WHOLE ZIP into a writable folder (not inside another server).
 3. Open a terminal in that folder. Run: node setup.cjs
+   This installs dependencies and builds game/tool data; allow several minutes.
 4. After setup completes, run: node start.cjs
-5. Leave the terminal open. The first start packs data and takes several minutes.
+5. Leave the terminal open. A start may rebuild changed game data.
    Wait for "World ready", then open http://127.0.0.1:8080/ in Chrome.
 6. Select Existing user. For this private development world, a new name creates
    a save automatically. There is no account authentication in this local mode.
@@ -21,9 +22,11 @@ WINDOWS / MAC / LINUX
 Later starts: node start.cjs. Stop with Ctrl+C. Do not close the terminal while
 saving. Player saves live in server/data/players/. Back up that folder before
 reinstalling. Re-running setup preserves .env, installation keys and saves.
-The kit serves the launcher, files and WebSocket through one address, avoiding
+Stop the server before re-running setup. The kit serves the launcher, files and WebSocket through one address, avoiding
 cross-origin browser failures. It supplies the installation's PUBLIC login key
-to its own client; private keys stay in the server directory.
+to its own client; private keys stay in the server directory. Built-in tools
+connect to this local world automatically. Map and chat-animation data are built
+during setup and served through specific read-only endpoints.
 Ports: launcher 8080, server 8888, management 8898, game TCP 43594.
 The installer restricts backend listeners to 127.0.0.1. Keep these ports private;
 the upstream development world is not hardened for

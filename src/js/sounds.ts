@@ -11,7 +11,7 @@ import Bzip from './vendor/bzip';
 
 import {playWave} from './jagex2/util/AudioUtil';
 import './vendor/midi.js';
-import {setupConfiguration} from './configuration';
+import {packFileUrl, setupConfiguration} from './configuration';
 import {Client} from './client';
 
 class Sounds extends Client {
@@ -81,7 +81,7 @@ class Sounds extends Client {
 
         sounds.innerHTML = '';
 
-        this.packfiles[1] = await this.loadPack(`${Client.githubRepository}/data/src/pack/sound.pack`);
+        this.packfiles[1] = await this.loadPack(packFileUrl('sound'));
 
         const search: HTMLInputElement = document.createElement('input');
         search.type = 'search';

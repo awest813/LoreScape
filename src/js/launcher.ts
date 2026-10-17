@@ -35,6 +35,7 @@ try {
     document.querySelector('.launch-saved')!.textContent = 'Your settings apply to this visit. Saved preferences are unavailable in this browser.';
 }
 const linkedWorld: string | null = parameters.get('world');
+if (parameters.get('setup') === '1' && linkedWorld === null) preferences.world = 0;
 if (linkedWorld !== null && linkedWorld.trim() && validWorld(Number(linkedWorld))) preferences.world = Number(linkedWorld);
 if (['high', 'low'].includes(parameters.get('detail') || '')) preferences.detail = parameters.get('detail') as 'high' | 'low';
 localAddress.value = parameters.get('local') || preferences.localAddress || DEFAULT_LOCAL_ADDRESS;
@@ -160,6 +161,14 @@ async function launch(): Promise<void> {
     url.searchParams.set('detail', preferences.detail);
     if (id === 0) url.searchParams.set('local', localAddress.value);
     else url.searchParams.delete('local');
+    if (id === 0 && parameters.get('setup') === '1') {
+        url.searchParams.delete('setup');
+        try {
+            if (new URL(selectedAddress).origin === window.location.origin) url.searchParams.set('setup', '1');
+        } catch {
+            // The local connection check below provides the address error.
+        }
+    }
     if (!url.searchParams.has('method')) url.searchParams.set('method', '0');
     if (started) {
         window.location.assign(url.href);

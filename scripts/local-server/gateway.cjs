@@ -4,6 +4,14 @@ const path = require('node:path');
 const {createPublicKey} = require('node:crypto');
 
 function createGateway({client, server, backendPort = 8888, publicOrigin}) {
+    const toolPages = new Set(['/playground.html', '/items.html', '/sounds.html', '/interface-editor.html', '/mapview.html', '/mesanim.html']);
+    const toolData = new Map([
+        ['/worldmap.jag', path.join(server, 'data/pack/mapview/worldmap.jag')],
+        ['/server/mesanim.dat', path.join(server, 'data/pack/server/mesanim.dat')],
+        ['/tool-data/npc.pack', path.join(server, 'data/src/pack/npc.pack')],
+        ['/tool-data/obj.pack', path.join(server, 'data/src/pack/obj.pack')],
+        ['/tool-data/sound.pack', path.join(server, 'data/src/pack/synth.pack')]
+    ]);
     const key = createPublicKey(fs.readFileSync(path.join(server, 'data/config/public.pem'))).export({format: 'jwk'});
     const decimal = value => BigInt('0x' + Buffer.from(value, 'base64url').toString('hex')).toString();
     const configuration = JSON.stringify({version: 1, revision: 225, modulus: decimal(key.n), exponent: decimal(key.e)});
@@ -27,12 +35,20 @@ function createGateway({client, server, backendPort = 8888, publicOrigin}) {
             res.writeHead(302, {Location: url.pathname + url.search}).end();
             return;
         }
+        if (toolPages.has(pathname) && !url.searchParams.has('world')) {
+            url.searchParams.set('world', '0');
+            url.searchParams.set('setup', '1');
+            url.searchParams.set('local', publicOrigin || 'http://127.0.0.1:8080');
+            res.writeHead(302, {Location: url.pathname + url.search}).end();
+            return;
+        }
         if (pathname === '/lorescape-server.json') {
             res.writeHead(200, {'Content-Type': 'application/json', 'Cache-Control': 'no-store'}).end(configuration);
             return;
         }
-        const filename = path.resolve(client, '.' + pathname);
-        if (filename.startsWith(path.resolve(client) + path.sep) && fs.existsSync(filename) && fs.statSync(filename).isFile()) {
+        const toolFile = toolData.get(pathname);
+        const filename = toolFile || path.resolve(client, '.' + pathname);
+        if ((toolFile || filename.startsWith(path.resolve(client) + path.sep)) && fs.existsSync(filename) && fs.statSync(filename).isFile()) {
             if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
             res.writeHead(200, {'Content-Type': types[path.extname(filename)] || 'application/octet-stream', 'X-Content-Type-Options': 'nosniff'});
             if (req.method === 'HEAD') res.end();

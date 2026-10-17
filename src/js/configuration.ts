@@ -4,6 +4,10 @@ import {getWorldInfo, WorldInfo} from './worldlist';
 import {DEFAULT_LOCAL_ADDRESS, localWorldAddresses, worldAddresses} from './connection';
 import {parseSetupKey} from './setup-key';
 
+export function packFileUrl(name: 'npc' | 'obj' | 'sound'): string {
+    return GameShell.getParameter('world') === '0' && GameShell.getParameter('setup') === '1' ? `${Client.httpAddress}/tool-data/${name}.pack` : `${Client.githubRepository}/data/src/pack/${name}.pack`;
+}
+
 export async function setupConfiguration(): Promise<void> {
     await world();
     detail();
