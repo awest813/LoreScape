@@ -125,14 +125,16 @@ function renderWorlds(): void {
 }
 
 async function refreshWorlds(): Promise<void> {
+    const restoreFocus: boolean = document.activeElement === refresh;
     refresh.disabled = true;
     list.setAttribute('aria-busy', 'true');
     const notice: HTMLElement = document.getElementById('world-notice')!;
     notice.hidden = true;
     document.getElementById('world-count')!.textContent = 'Fetching worlds…';
     try {
-        worlds = parseWorldChoices(JSON.parse(await downloadText(WORLD_LIST_URL, 10000)));
-        if (!worlds.length) throw new Error('No worlds returned.');
+        const updated: WorldInfo[] = parseWorldChoices(JSON.parse(await downloadText(WORLD_LIST_URL, 10000)));
+        if (!updated.length) throw new Error('No worlds returned.');
+        worlds = updated;
     } catch {
         notice.textContent = worlds.length ? 'The directory could not be refreshed. Showing the last fetched list.' : 'World directory unavailable. Refresh to retry, or connect by world ID below.';
         notice.hidden = false;
@@ -141,6 +143,7 @@ async function refreshWorlds(): Promise<void> {
         renderWorlds();
         refresh.disabled = false;
         list.setAttribute('aria-busy', 'false');
+        if (restoreFocus && document.activeElement === document.body) refresh.focus({preventScroll: true});
     }
 }
 
@@ -191,8 +194,12 @@ async function launch(): Promise<void> {
             if (check.signal.aborted) return;
         } catch (error) {
             if (check.signal.aborted) return;
-            showStartupError(error);
+            setPageStatus(`Unable to load the client. ${error instanceof Error ? error.message : 'Check the local world files and try again.'}`, true, {
+                label: 'Check world again',
+                action: (): void => { void launch(); }
+            });
             launchButton.disabled = false;
+            if (document.activeElement === document.body) document.getElementById('lore-retry')!.focus({preventScroll: true});
             return;
         } finally {
             if (pendingCheck === check) {
@@ -208,6 +215,10 @@ async function launch(): Promise<void> {
     launchButton.disabled = true;
     stage.hidden = false;
     document.body.classList.add('has-client');
+    document.querySelector<HTMLAnchorElement>('.launcher-header nav a')!.href = '#client-stage';
+    const skip: HTMLAnchorElement = document.querySelector<HTMLAnchorElement>('.launcher-skip')!;
+    skip.href = '#canvas';
+    skip.textContent = 'Skip to game';
     document.getElementById('client-heading')!.textContent = worldLabel(id);
     document.getElementById('client-detail')!.textContent = selectedDetail === 'low' ? 'Low detail · Classic client' : 'High detail · Classic client';
     document.getElementById('client-status')!.append(connectionStatus);
@@ -236,7 +247,8 @@ cancelCheckButton.addEventListener('click', (): void => {
     cancelCheck();
     launchButton.focus();
 });
-form.addEventListener('change', (): void => {
+form.addEventListener('change', (event: Event): void => {
+    if (!(event.target instanceof HTMLInputElement) || event.target.name !== 'detail') return;
     cancelCheck();
     cancelCacheDownload();
     preferences.detail = (form.elements.namedItem('detail') as RadioNodeList).value === 'low' ? 'low' : 'high';

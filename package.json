@@ -26,6 +26,7 @@
     "jest-environment-jsdom": "^30.5.2",
     "lint-staged": "^17.6.0",
     "mini-css-extract-plugin": "^2.9.0",
+    "playwright": "^1.62.1",
     "postcss-loader": "^8.1.1",
     "prettier": "^3.2.5",
     "proxy-from-env": "^1.1.0",
@@ -74,7 +75,8 @@
     "typecheck": "npm run asc && tsc --noEmit",
     "preview": "node scripts/preview.cjs",
     "check:pages": "node scripts/check-pages.cjs",
-    "check:server": "node --experimental-strip-types scripts/check-server.cjs"
+    "check:server": "node --experimental-strip-types scripts/check-server.cjs",
+    "test:launcher": "node tools/tests/browser-launcher.cjs"
   },
   "repository": {
     "type": "git",
