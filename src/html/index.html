@@ -5,40 +5,62 @@
     <title>LoreScape — Your adventure awaits</title>
     <meta name="description" content="Return to a classic world. Choose a 2004Scape world, launch the browser client, and explore LoreScape's creative tools.">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#101b18">
+    <meta name="theme-color" content="#0c1412">
     <link rel="icon" href="favicon.ico">
 </head>
 <body class="launcher">
     <a class="launcher-skip" href="#launch-panel">Skip to launcher</a>
     <header class="launcher-header">
-        <a class="launcher-logo" href="index.html" aria-label="LoreScape home"><svg viewBox="0 0 40 48" fill="none" aria-hidden="true"><path d="M20 2 37 12v23L20 46 3 35V12Z" stroke="currentColor"/><path d="M20 8 31 15v17L20 39 9 32V15Z" stroke="currentColor" opacity=".4"/><path d="M16 16v16h11v-4h-7V16Z" fill="currentColor"/></svg><span>LoreScape<small>A classic, rediscovered.</small></span></a>
-        <nav aria-label="Launcher navigation"><a href="#launch-panel" aria-current="page">Play</a><a href="#toolkit">Explore tools</a><a href="#guide">Getting started</a></nav>
+        <a class="launcher-logo" href="index.html" aria-label="LoreScape home"><svg viewBox="0 0 40 48" fill="none" aria-hidden="true"><path d="M20 2 37 12v23L20 46 3 35V12Z" stroke="currentColor"/><path d="M20 8 31 15v17L20 39 9 32V15Z" stroke="currentColor" opacity=".4"/><path d="M16 16v16h11v-4h-7V16Z" fill="currentColor"/></svg><span>LoreScape<small>A world worth returning to.</small></span></a>
+        <nav aria-label="Launcher navigation"><a href="#offline-play" aria-current="page">Play</a><a href="#launch-panel">Online worlds</a><a href="#toolkit">The toolkit</a><a href="#guide">Field guide</a></nav>
         <a class="launcher-github" href="https://github.com/awest813/LoreScape">GitHub <span aria-hidden="true"><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></a>
     </header>
     <main>
         <div class="launcher-layout">
             <section class="launcher-hero" aria-labelledby="hero-title">
-                <p class="launcher-eyebrow"><span></span> THE 2004SCAPE BROWSER CLIENT</p>
-                <h1 id="hero-title">A familiar world.<br>A new <em>adventure.</em></h1>
-                <p class="launcher-lede">The winding paths. The first quest. The friends along the way. Step back into a world that still has stories to tell.</p>
-                <div class="launcher-features"><span>Play in your browser</span><i aria-hidden="true">✦</i><span>No install needed</span><i aria-hidden="true">✦</i><span>Open source</span></div>
-                <figure class="launcher-landscape"><img src="launcher-landscape.svg" width="960" height="500" alt="" fetchpriority="high"><figcaption><span>THE PATH IS YOURS TO CHOOSE</span><span aria-hidden="true">01 — A WORLD AWAITS</span></figcaption></figure>
+                <div class="hero-copy"><p class="launcher-eyebrow"><span></span> A CLASSIC WORLD. STILL FULL OF POSSIBILITY.</p>
+                <h1 id="hero-title">Your world.<br>Your next <em>chapter.</em></h1>
+                <p class="launcher-lede">One more quest. One unfamiliar path. A familiar feeling.<br>Find your way back to adventure, right in your browser.</p>
+                <div class="hero-actions"><a class="hero-primary" href="offline/coop.html?install=1">Play offline <svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></a><a href="#launch-panel">Explore online worlds <span aria-hidden="true">→</span></a></div>
+                <div class="launcher-features"><span>Built for your browser</span><i aria-hidden="true">✦</i><span>Made to be explored</span></div></div>
+                <figure class="launcher-landscape"><img src="launcher-landscape.svg" width="960" height="500" alt="" fetchpriority="high"><figcaption><span>GIELINOR, AT YOUR OWN PACE</span><span aria-hidden="true">EST. 2004 / REDISCOVERED TODAY</span></figcaption></figure>
+            </section>
+            <div class="adventure-heading"><h2>Choose your adventure.</h2><p>Two ways in. Countless paths ahead.</p></div>
+            <section class="offline-card" id="offline-play" aria-labelledby="offline-play-title" tabindex="-1">
+                <div class="mode-heading"><span class="mode-pill"><span aria-hidden="true">✦</span> YOUR PRIVATE WORLD</span><span class="mode-number">01 / OFFLINE</span></div>
+                <div class="offline-emblem" aria-hidden="true"><svg viewBox="0 0 80 80" fill="none"><circle cx="40" cy="40" r="30"/><circle cx="40" cy="40" r="24"/><path d="m40 10 7 23 23 7-23 7-7 23-7-23-23-7 23-7Z"/><path d="m40 25 4 11 11 4-11 4-4 11-4-11-11-4 11-4Z"/></svg></div>
+                <h2 id="offline-play-title">A world that’s<br><em>entirely yours.</em></h2>
+                <p class="offline-description">Take the long way home. Build your skills, follow a quest, and leave the world waiting right where you left it.</p>
+                <ul class="offline-benefits"><li><span aria-hidden="true">✓</span> No account or separate server</li><li><span aria-hidden="true">✓</span> Play without a connection after installation</li><li><span aria-hidden="true">✓</span> Your character, saved on this device</li></ul>
+                <a class="launch-button offline-install" id="install-offline" href="offline/coop.html?install=1"><span>Install cache &amp; play offline</span><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></a>
+                <div class="offline-footnote"><span>~28 MB · One-time download</span><a href="offline/coop.html">Open saved worlds →</a></div>
+                <p class="offline-save-note">A private adventure, separate from public-world characters. Export a backup to take your progress with you.</p>
             </section>
             <section class="launch-panel" id="launch-panel" aria-labelledby="launch-title" tabindex="-1">
-                <div class="launch-panel-heading"><span class="launcher-eyebrow">BEGIN YOUR JOURNEY</span><span class="launch-edition">CLASSIC / 225</span></div>
-                <h2 id="launch-title">Make yourself at home.</h2>
-                <p class="launch-description">Pick a world. We'll meet you there.</p>
+                <div class="launch-panel-heading"><span class="mode-pill online-pill"><span aria-hidden="true">●</span> THE SHARED ADVENTURE</span><span class="launch-edition">02 / ONLINE</span></div>
+                <h2 id="launch-title">Find your people.</h2>
+                <p class="launch-description">Join a public world and pick up your next story.</p>
                 <form id="launcher-form">
                     <div class="launch-section-label"><h3><span>01</span> Choose a world</h3><button id="refresh-worlds" type="button" aria-label="Refresh world list">Refresh <span aria-hidden="true">↻</span></button></div>
                     <div class="world-filter"><label for="world-filter">Show</label><select id="world-filter"><option value="all">All worlds</option><option value="free">Free worlds</option><option value="members">Members worlds</option></select><span id="world-count" role="status">Fetching worlds…</span></div>
                     <p id="world-notice" class="world-notice" role="status" hidden></p>
                     <div id="world-list" class="world-list" role="group" aria-label="Available worlds" aria-busy="true"><p class="world-placeholder">Looking for your next destination…</p></div>
+                    <fieldset class="graphics-settings"><legend><span>02</span> Your graphics</legend><div class="graphics-options">
+                        <label><input type="radio" name="detail" value="high" checked><span><strong>High detail</strong><small>More scenery & effects</small></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></label>
+                        <label><input type="radio" name="detail" value="low"><span><strong>Low detail</strong><small>Best for lighter devices</small></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></label>
+                    </div></fieldset>
+                    <button class="launch-button" id="launch-button" type="submit"><span>Enter world <span id="selected-world">1</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
+                    <p class="launch-account">A 2004Scape account is required. <a href="https://2004scape.org">Account info <span aria-hidden="true"><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></a></p>
+                    <button id="cancel-check" class="cancel-check" type="button" hidden>Cancel connection check</button>
+                    <div id="launch-status"></div>
+                    <div class="launch-saved"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3h10v11H3Zm2 0v4h6V3M6 10h4v4"/></svg>Your world & graphics are remembered on this device.</div>
+                    <div class="advanced-heading">MORE WAYS TO CONNECT</div>
                     <details class="world-manual" id="world-manual"><summary>Connect by world ID</summary><label for="world">World ID<input id="world" name="world" type="number" min="0" max="999" step="1" required value="1"></label><p>For worlds 0, 998, and 999, use the local world controls below.</p></details>
                     <details class="local-worlds" id="local-worlds"><summary>Local &amp; browser worlds</summary>
                         <p>Start your own world on a computer, or connect to one that is already hosted.</p>
                         <p><a class="setup-download" href="lorescape-local-server.zip" download>Download local server setup (.zip)</a> <a href="local-setup.html">Setup guide</a></p>
                         <p>The setup installs and starts a game server. Requires Node.js 22.22.1+, Git, Java 17+, and internet for the first setup. Extract the ZIP, run <code>node setup.cjs</code>, then <code>node start.cjs</code>. Open the local link printed in the terminal.</p>
-                        <p><strong>Locked-down Chromebook?</strong> The local server needs Linux support. Without it, use a public world above or open a launcher hosted on another computer over HTTPS. <a href="local-setup.html#chromebook">Chromebook options</a> need no extensions; your administrator must allow the site and game connections.</p>
+                        <p><strong>Locked-down Chromebook?</strong> The local server needs Linux support. Without it, choose our offline browser adventure, a public world, or a launcher hosted on another computer over HTTPS. <a href="local-setup.html#chromebook">Chromebook options</a> need no extensions; your administrator must allow the site and game connections.</p>
                         <div class="local-world-options" role="group" aria-label="Local worlds">
                             <button type="button" class="local-world-option" data-world="0" aria-pressed="false"><strong>Local server</strong><small>World 0 · Connect to your server</small></button>
                             <button type="button" class="local-world-option" data-world="999" aria-pressed="false"><strong>Host in browser</strong><small>World 999 · Worker bundle required</small></button>
@@ -47,27 +69,17 @@
                         <div id="local-server-settings" hidden><label for="local-address">Server web address<input id="local-address" type="url" placeholder="http://localhost:8888" spellcheck="false" autocomplete="url" aria-describedby="local-help" disabled></label><p id="local-help">Use the server's web port. The client tries WebSockets on this port, then port 43595. HTTP servers need the HTTP launcher at localhost:8080; HTTPS Pages needs an HTTPS/WSS server.</p></div>
                         <p id="local-mode-help" class="world-notice" hidden></p>
                     </details>
-                    <details class="cache-export" id="cache-export"><summary>Download cache for tools</summary><p>Works in Chrome on Chromebooks when file downloads and imports are allowed. This cache is for inspection tools. Use Install cache &amp; play offline below for a playable private world.</p><label for="cache-format">Cache format</label><select id="cache-format"><option value="classic" selected>Classic cache for Cache viewer / JagEd</option><option value="core">Core browser client files</option></select><p id="cache-format-help">Save a classic cache ZIP for model inspection in Cache viewer/JagEd. Open the ZIP directly in either tool, or choose its extracted folder. All six cache files load automatically. Animation, music, and map stores are excluded.</p><div class="cache-export-actions"><button id="download-cache" type="button">Download classic cache (.zip)</button><button id="cancel-cache-download" type="button" hidden>Cancel download</button></div><p id="cache-download-status" role="status" aria-live="polite">Uses the world and server address selected above. Requires a reachable file server.</p></details>
-                    <fieldset class="graphics-settings"><legend><span>02</span> Set the atmosphere</legend><div class="graphics-options">
-                        <label><input type="radio" name="detail" value="high" checked><span><strong>High detail</strong><small>The full classic look</small></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></label>
-                        <label><input type="radio" name="detail" value="low"><span><strong>Low detail</strong><small>Lighter on your device</small></span><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m4 10 4 4 8-8"/></svg></label>
-                    </div></fieldset>
-                    <button class="launch-button" id="launch-button" type="submit"><span>Enter world <span id="selected-world">1</span></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></button>
-                    <p class="launch-account">A 2004Scape account is required. <a href="https://2004scape.org">Account info <span aria-hidden="true"><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></a></p>
-                    <button id="cancel-check" class="cancel-check" type="button" hidden>Cancel connection check</button>
-                    <div id="launch-status"></div>
-                    <div class="launch-saved"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3h10v11H3Zm2 0v4h6V3M6 10h4v4"/></svg>Your world & graphics are remembered on this device.</div>
+                    <details class="cache-export" id="cache-export"><summary>Download cache for tools</summary><p>Works in Chrome on Chromebooks when file downloads and imports are allowed. This cache is for inspection tools. Use Install cache &amp; play offline for a playable private world.</p><label for="cache-format">Cache format</label><select id="cache-format"><option value="classic" selected>Classic cache for Cache viewer / JagEd</option><option value="core">Core browser client files</option></select><p id="cache-format-help">Save a classic cache ZIP for model inspection in Cache viewer/JagEd. Open the ZIP directly in either tool, or choose its extracted folder. All six cache files load automatically. Animation, music, and map stores are excluded.</p><div class="cache-export-actions"><button id="download-cache" type="button">Download classic cache (.zip)</button><button id="cancel-cache-download" type="button" hidden>Cancel download</button></div><p id="cache-download-status" role="status" aria-live="polite">Uses the world and server address selected above. Requires a reachable file server.</p></details>
                 </form>
             </section>
         </div>
-        <section class="launcher-guide" id="offline-play" aria-labelledby="offline-play-title"><div><p class="launcher-eyebrow">YOUR WORLD · NO CONNECTION NEEDED</p><h2 id="offline-play-title">Install once.<br>Adventure offline.</h2></div><div><p>Install the complete game cache and a private world that runs in your browser. No account, Linux, or separate server required. Connect for the first download, then return to your saved world offline.</p><p><a class="launch-button" id="install-offline" href="offline/coop.html?install=1">Install cache &amp; play offline →</a></p><p>Progress stays on this device. Public-world characters stay on their servers. Bookmark the offline launcher; exported backups protect your saves.</p></div></section>
         <section class="client-stage" id="client-stage" hidden aria-labelledby="client-heading">
             <div class="client-toolbar"><div><p class="launcher-eyebrow">YOUR ADVENTURE</p><h1 id="client-heading">World 1</h1><span id="client-detail"></span></div><div class="client-actions"><a href="index.html">Back to launcher</a><button id="fullscreen-client" type="button" hidden>Fullscreen</button></div></div>
             <div id="client-status"></div><p id="official-play" hidden>Public world unavailable? <a href="https://2004scape.org">Try the official 2004Scape site</a>.</p>
             <div class="client-screen"><canvas id="canvas" width="789" height="532" tabindex="0" aria-label="Game client. Focus here to use the keyboard.">Your browser must support Canvas to run the client.</canvas></div>
             <p class="client-hint">Click the game to focus it. Use your mouse to interact and your keyboard to chat.</p>
         </section>
-        <section class="launcher-toolkit" id="toolkit" aria-labelledby="toolkit-title"><div class="toolkit-heading"><div><p class="launcher-eyebrow">FOR THE CURIOUS & THE CREATORS</p><h2 id="toolkit-title">There's more to explore.</h2></div><p>A closer look at the world behind the adventure.</p></div>
+        <section class="launcher-toolkit" id="toolkit" aria-labelledby="toolkit-title"><div class="toolkit-heading"><div><p class="launcher-eyebrow">LOOK A LITTLE CLOSER</p><h2 id="toolkit-title">The world behind the world.</h2></div><p>For the curious, the tinkerers, and the world builders.</p></div>
             <div class="toolkit-grid">
                 <a href="playground.html"><span class="tool-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m16 2 13 8v14l-13 7-13-7V10Zm0 14L3 10m13 6 13-6M16 16v15"/></svg></span><h3>Model studio <span><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></h3><p>Inspect the shapes that bring the world to life.</p><small>VIEW & EXPLORE</small></a>
                 <a href="items.html"><span class="tool-icon" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m8 24 15-15 5-5-1 8-15 15m-4-7 7 7M5 24l3 3-4 4-3-3Z"/></svg></span><h3>Item index <span><svg class="outbound-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 12 12 4M4 4h8v8"/></svg></span></h3><p>From your first bronze sword to the rarest find.</p><small>BROWSE & SEARCH</small></a>
@@ -76,10 +88,10 @@
             </div>
             <div class="toolkit-more"><span>Keep creating</span><a href="sounds.html">Sounds</a><a href="mesanim.html">Chat animations</a><a href="interface-editor.html">Interface editor <small>Experimental</small></a><a href="JagEd.html">JagEd <small>Experimental</small></a></div>
         </section>
-        <section class="launcher-guide" id="guide" aria-labelledby="guide-title"><div><p class="launcher-eyebrow">BEFORE YOU SET OUT</p><h2 id="guide-title">A little guidance <br>goes a long way.</h2><p>Best enjoyed with a keyboard, a mouse,<br>and a little time to get lost.</p></div><div class="guide-questions">
-            <details><summary>What do I need to play?</summary><p>A current Chrome, Firefox, Edge, or Safari browser and an account on the selected 2004Scape server. Visit <a href="https://2004scape.org">2004Scape</a> for account information. Some worlds require membership.</p></details>
+        <section class="launcher-guide" id="guide" aria-labelledby="guide-title"><div><p class="launcher-eyebrow">BEFORE YOU SET OUT</p><h2 id="guide-title">Every adventure <br>starts somewhere.</h2><p>Best enjoyed with a keyboard, a mouse,<br>and a little time to get lost.</p></div><div class="guide-questions">
+            <details><summary>What do I need to play?</summary><p>A current browser. The offline adventure needs one complete download and browser storage, with no account required. Online worlds need an account on the selected 2004Scape server. Visit <a href="https://2004scape.org">2004Scape</a> for account information. Some worlds require membership.</p></details>
             <details><summary>Which graphics setting should I choose?</summary><p>High detail gives you the full classic presentation. Low detail reduces the load on your device. You can change this before each launch; your choice is remembered here.</p></details>
-            <details><summary>My world isn't loading. What now?</summary><p>Retry the connection or return to the launcher and choose another world. The world service and game files need to be available. This website hosts the browser client; game servers are separate services. A normal build needs an internet connection.</p></details>
+            <details><summary>My world isn't loading. What now?</summary><p>Retry the connection or return to the launcher and choose another world. The world service and game files need to be available. Public worlds need a reachable game server and an internet connection. For a private world without a connection, choose Install cache &amp; play offline.</p></details>
             <details><summary>Can I use the tools without playing?</summary><p>Yes. Open a tool directly from the toolkit above. Most tools download data from the game services. The cache viewer and JagEd let you bring cache files from your computer.</p></details>
         </div></section>
     </main>

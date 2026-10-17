@@ -4,7 +4,7 @@ import path from 'node:path';
 import {root} from './coop-config.mjs';
 
 const directory = path.resolve(process.argv[2] || path.join(root, 'public'));
-const required = ['coop.html', 'index.html', 'index.js', 'worker.js', 'LoginThread.js', 'FriendThread.js', 'browser-world.json', 'manifest.json', 'manifest.png', 'favicon.ico', 'SCC1_Florestan.sf2', 'data/config/private.pem'];
+const required = ['coop.html', 'index.html', 'index.js', 'worker.js', 'LoginThread.js', 'FriendThread.js', 'browser-world.json', 'manifest.json', 'launcher-landscape.svg', 'manifest.png', 'favicon.ico', 'SCC1_Florestan.sf2', 'data/config/private.pem'];
 if (!required.every(file => existsSync(path.join(directory, file)))) {
     if (process.argv.includes('--strict')) throw new Error('Offline pack incomplete: missing required client or server assets');
     console.log('Offline manifest deferred: finish client and server builds first.');

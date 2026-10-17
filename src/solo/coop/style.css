@@ -694,3 +694,63 @@ html.game-expanded body {
 #fullscreenStatus.error {
     color: #ffb5a7;
 }
+
+/* Match the public launcher while keeping the game viewport unobstructed. */
+:root {
+    --bg: #0c1412;
+    --panel: #17271d;
+    --edge: #3c4e3d;
+    --ink: #eeeadd;
+    --muted: #afbdab;
+    --gold: #e2bf7d;
+}
+body:not(.playing) { background: #0c1412; }
+body:not(.playing) main { max-width: 1240px; padding-top: 30px; }
+body:not(.playing) header {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-height: 295px;
+    padding: 34px;
+    background: #14231c;
+    border: 1px solid #40523e;
+    border-radius: 7px;
+    margin-bottom: 26px;
+}
+body:not(.playing) header::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 0 22%;
+    z-index: -1;
+    background: linear-gradient(90deg, #14231c, #14231cd9 18%, transparent 80%), url('../launcher-landscape.svg') center / cover;
+    opacity: .75;
+}
+body:not(.playing) header > div { max-width: 580px; }
+body:not(.playing) header h1 { font: 400 clamp(49px, 7vw, 76px)/1.1 Georgia, serif; letter-spacing: -3px; color: #eeeadd; }
+body:not(.playing) .hero-lead { color: #e2bf7d; font-size: 28px; margin-top: 14px; }
+body:not(.playing) header .launcher-only { max-width: 450px; font-size: 14px; line-height: 1.9; }
+body:not(.playing) header > .pill { background: #17291e; border-color: #7c8b5c; color: #d7dcb7; }
+body:not(.playing) .launcher-grid { gap: 22px; }
+body:not(.playing) article { border-radius: 6px; border-color: #3c4e3d; background: #14221a; }
+body:not(.playing) .launch-card { background: radial-gradient(ellipse at 100% 0, #354b3066, transparent 70%), #1b2c20; border-color: #748059; }
+body:not(.playing) .launch-card h2 { font: 400 37px/1.2 Georgia, serif; letter-spacing: -1px; }
+body:not(.playing) .card-heading { border-bottom: 1px solid #40543b; padding-bottom: 18px; }
+body:not(.playing) .eyebrow { color: #d6c387; letter-spacing: 1.7px; }
+body:not(.playing) input, body:not(.playing) select { background: #0e1a13; border-color: #53644a; border-radius: 4px; }
+body:not(.playing) button { border-radius: 4px; }
+body:not(.playing) #installOffline { background: #e2bf7d; color: #152417; border-color: #ecd4a1; box-shadow: 0 3px 0 #756543; }
+body:not(.playing) #installOffline:hover { background: #f0d699; }
+body:not(.playing) #installOfflineHelp { color: #b4c0aa; line-height: 1.8; font-size: 12px; }
+body:not(.playing) #installOfflineStatus { color: #e3d5ac; font-size: 13px; }
+body:not(.playing) .world-tools, body:not(.playing) .utility { border-color: #3c4e3d; border-radius: 5px; }
+body:not(.playing) footer { padding-top: 20px; border-top: 1px solid #35473d; }
+@media (max-width: 650px) {
+    body:not(.playing) main { padding: 18px 16px 26px; }
+    body:not(.playing) header { padding: 25px 22px; min-height: 300px; gap: 18px; }
+    body:not(.playing) header h1 { font-size: 54px; }
+    body:not(.playing) .hero-lead { font-size: 24px; }
+    body:not(.playing) header::before { inset: 0; opacity: .4; }
+    body:not(.playing) header .launcher-only { font-size: 13px; }
+    body:not(.playing) .launch-card h2 { font-size: 32px; }
+    body:not(.playing) .card-heading { gap: 10px; }
+}

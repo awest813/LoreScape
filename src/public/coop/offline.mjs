@@ -4,6 +4,7 @@ export async function offlineAction(type, progress = () => {}, signal) {
     const base = new URL('../', import.meta.url);
     const existing = await navigator.serviceWorker.getRegistration(base);
     const registration = existing?.scope === base.href ? existing : await navigator.serviceWorker.register(new URL('offline-sw.js', base), {scope: base.pathname});
+    if (!registration || typeof registration.update !== 'function') throw new Error('Your browser blocked offline installation. Allow site storage and service workers, or play while connected.');
     registration.update().catch(() => {});
     if (!registration.active) await new Promise((resolve, reject) => {
         const interval = setInterval(() => {
