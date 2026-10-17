@@ -66,7 +66,11 @@ const path = require('node:path');
         return frame(page);
     }
     try {
-        for (let i = 0; i < 5; i++) contexts.push(await browser.newContext({serviceWorkers: 'block', viewport: {width: 1220, height: 850}}));
+        for (let i = 0; i < 5; i++) {
+            const context = await browser.newContext({serviceWorkers: 'block', viewport: {width: 1220, height: 850}});
+            if (process.env.LORESCAPE_DISABLE_RTC === '1') await context.addInitScript(() => {Object.defineProperty(window, 'RTCPeerConnection', {configurable: true, value: undefined});});
+            contexts.push(context);
+        }
         const host = await pageIn(contexts[0]);
         await host.locator('#worldName').fill('Co-op acceptance');
         await host.locator('#host').click();

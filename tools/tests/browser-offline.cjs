@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 (async () => {
-    const directory = path.resolve(__dirname, '../../public');
+    const directory = path.resolve(process.env.LORESCAPE_OFFLINE_DIR || path.join(__dirname, '../../public'));
     let brokenManifest = false,
         upgrades = 0;
     const mime = {'.js': 'text/javascript', '.mjs': 'text/javascript', '.html': 'text/html', '.json': 'application/json', '.css': 'text/css', '.wasm': 'application/wasm'};

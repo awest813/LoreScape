@@ -764,7 +764,7 @@ export abstract class Client extends GameShell {
                 onmessageerror: null,
                 terminate: (): void => {
                     this.peer?.dc?.close();
-                    this.peer?.pc.close();
+                    this.peer?.pc?.close();
                 },
                 addEventListener: (): void => {
                     throw new Error();

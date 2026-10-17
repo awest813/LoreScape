@@ -39,6 +39,7 @@ writeFileSync(path.join(output, 'FriendThread.js'), 'self.onmessage = () => {};\
 // Upstream initializes CRCs before packing archives on the first clean build,
 // leaving an all-zero table that the live worker rejects during character login.
 writeClientCrc(output);
+writeFileSync(path.join(output, 'browser-world.json'), JSON.stringify({version: 1, kind: 'lorescape-coop'}) + '\n');
 for (const file of ['worker.js', 'LoginThread.js', 'FriendThread.js', 'bzip2.wasm', 'rsmod-pathfinder.wasm', 'data/pack/client/crc']) {
     if (!existsSync(path.join(output, file))) throw new Error(`Bundle missing ${file}`);
 }

@@ -1,5 +1,5 @@
 import {localWorldAddresses} from '../src/js/connection';
-import {checkWorkerBundle, loadClientChecksums} from '../src/js/local-worlds';
+import {checkWorkerBundle, loadClientChecksums, usesRoomLobby} from '../src/js/local-worlds';
 
 afterEach((): void => {
     jest.restoreAllMocks();
@@ -44,4 +44,26 @@ test.each([404, 200])('missing worker or HTML fallback returns setup instruction
 test('accepts a served JavaScript worker module', async (): Promise<void> => {
     jest.spyOn(global, 'fetch').mockResolvedValue(new Response('/* module */', {headers: {'Content-Type': 'application/javascript'}}));
     await expect(checkWorkerBundle()).resolves.toBeUndefined();
+});
+
+test.each([
+    [{version: 1, kind: 'lorescape-coop'}, true],
+    [{version: 2, kind: 'lorescape-coop'}, false],
+    [{version: 1, kind: 'other'}, false],
+    [null, false]
+])('recognizes only compatible room-lobby bundles: %s', async (metadata: unknown, expected: boolean): Promise<void> => {
+    jest.spyOn(global, 'fetch').mockResolvedValue(new Response(JSON.stringify(metadata)));
+    await expect(usesRoomLobby(new AbortController().signal)).resolves.toBe(expected);
+});
+
+test('missing room metadata preserves support for external clipboard bundles', async (): Promise<void> => {
+    jest.spyOn(global, 'fetch').mockResolvedValue(new Response('missing', {status: 404}));
+    await expect(usesRoomLobby(new AbortController().signal)).resolves.toBe(false);
+});
+
+test('room metadata checks propagate cancellation', async (): Promise<void> => {
+    const controller: AbortController = new AbortController();
+    controller.abort();
+    jest.spyOn(global, 'fetch').mockRejectedValue(new DOMException('Aborted', 'AbortError'));
+    await expect(usesRoomLobby(controller.signal)).rejects.toThrow('Aborted');
 });

@@ -1,4 +1,4 @@
-import {createServer, Server} from 'node:http';
+import {createServer, get, Server} from 'node:http';
 import {mkdtempSync, mkdirSync, writeFileSync, rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -133,4 +133,45 @@ test('forwards the real WebSocket login seed and bidirectional binary frames', a
         });
         socket.on('close', (): void => resolve());
     });
+});
+
+async function redirectForHost(port: number, route: string, host: string): Promise<string> {
+    return new Promise<string>((resolve, reject): void => {
+        get({hostname: '127.0.0.1', port, path: route, headers: {Host: host}}, (response): void => {
+            response.resume();
+            resolve(String(response.headers.location || ''));
+        }).on('error', reject);
+    });
+}
+
+test.each(['localhost', '127.0.0.1', '[::1]'])('keeps setup and tool links on the requested loopback alias %s', async (host: string): Promise<void> => {
+    const local: Server = createGateway({client: join(root, 'client'), server: root});
+    const port: number = await listen(local);
+    try {
+        for (const route of ['/', '/index.html', '/items.html']) {
+            const location: string = await redirectForHost(port, route, `${host}:${port}`);
+            const next: URL = new URL(location, `http://${host}:${port}`);
+            expect(next.searchParams.get('setup')).toBe('1');
+            expect(next.searchParams.get('local')).toBe(`http://${host}:${port}`);
+        }
+    } finally {
+        await new Promise<void>((resolve): void => {
+            local.close((): void => resolve());
+        });
+    }
+});
+
+test('untrusted Host headers cannot become a setup server address', async (): Promise<void> => {
+    const local: Server = createGateway({client: join(root, 'client'), server: root});
+    const port: number = await listen(local);
+    try {
+        for (const host of [`external.example:${port}`, 'localhost:1', `user@localhost:${port}`]) {
+            const location: string = await redirectForHost(port, '/', host);
+            expect(new URL(location, 'http://localhost').searchParams.get('local')).toBe('http://127.0.0.1:8080');
+        }
+    } finally {
+        await new Promise<void>((resolve): void => {
+            local.close((): void => resolve());
+        });
+    }
 });

@@ -72,7 +72,13 @@ export class Host {
                 this.openRelay(msg.id, entry);
                 return;
             }
-            const pc: RTCPeerConnection = new RTCPeerConnection({iceServers: this.ctx.iceServers});
+            let pc: RTCPeerConnection;
+            try {
+                pc = new RTCPeerConnection({iceServers: this.ctx.iceServers});
+            } catch {
+                this.openRelay(msg.id, entry);
+                return;
+            }
             entry.pc = pc;
             pc.onicecandidate = (event): void => {
                 if (event.candidate) this.ctx.send({type: 'ice', to: msg.id, candidate: event.candidate.toJSON()});
@@ -169,7 +175,7 @@ export class Host {
     }
 }
 export class Peer {
-    public pc: RTCPeerConnection;
+    public pc: RTCPeerConnection | undefined;
     public dc: Channel | undefined;
     public uniqueId: string | undefined;
     private ctx: Context;
@@ -178,49 +184,65 @@ export class Peer {
     private timer: ReturnType<typeof setTimeout> | undefined;
     constructor(private worker: Worker) {
         this.ctx = context();
-        this.pc = new RTCPeerConnection({iceServers: this.ctx.iceServers});
-        this.pc.onicecandidate = (event): void => {
-            if (event.candidate && !this.relay) this.ctx.send({type: 'ice', candidate: event.candidate.toJSON()});
-        };
-        this.pc.ondatachannel = (event): void => {
-            if (this.relay) {
-                event.channel.close();
-                return;
+        if (this.ctx.transportMode !== 'relay') {
+            try {
+                this.pc = new RTCPeerConnection({iceServers: this.ctx.iceServers});
+                this.pc.onicecandidate = (event): void => {
+                    if (event.candidate && !this.relay) this.ctx.send({type: 'ice', candidate: event.candidate.toJSON()});
+                };
+                this.pc.ondatachannel = (event): void => {
+                    if (this.relay) {
+                        event.channel.close();
+                        return;
+                    }
+                    this.dc = event.channel;
+                    event.channel.onmessage = (e): void => {
+                        try {
+                            this.receive(JSON.parse(e.data));
+                        } catch {
+                            this.ctx.notify('Invalid host packet. Leave and rejoin the room.', true);
+                            this.ctx.send({type: 'leave'});
+                        }
+                    };
+                    event.channel.onclose = (): void => {
+                        if (!this.relay) {
+                            this.ctx.notify('Host connection closed. Leave and rejoin the room.', true);
+                            this.ctx.send({type: 'leave'});
+                        }
+                    };
+                };
+            } catch {
+                this.pc = undefined;
+                if (this.ctx.transportMode === 'rtc') throw new Error('WebRTC is unavailable or blocked. Choose Automatic or Relay to join this room.');
             }
-            this.dc = event.channel;
-            event.channel.onmessage = (e): void => {
-                try {
-                    this.receive(JSON.parse(e.data));
-                } catch {
-                    this.ctx.notify('Invalid host packet. Leave and rejoin the room.', true);
-                    this.ctx.send({type: 'leave'});
-                }
-            };
-            event.channel.onclose = (): void => {
-                if (!this.relay) {
-                    this.ctx.notify('Host connection closed. Leave and rejoin the room.', true);
-                    this.ctx.send({type: 'leave'});
-                }
-            };
-        };
+        }
         this.ctx.attachTransport(this);
-        this.ctx.send({type: 'ready', relay: this.ctx.transportMode === 'relay'});
-        if (this.ctx.transportMode === 'auto')
+        this.ctx.send({type: 'ready', relay: !this.pc});
+        if (this.ctx.transportMode === 'auto' && this.pc)
             this.timer = setTimeout((): void => {
                 if (!this.uniqueId) this.ctx.send({type: 'relay-open'});
             }, 10000);
+        else if (this.ctx.transportMode === 'rtc')
+            this.timer = setTimeout((): void => {
+                if (!this.uniqueId) this.ctx.notify('WebRTC could not connect. Leave the room, choose Automatic or Relay, and join again.', true);
+            }, 30000);
     }
     signal(msg: Signal): void {
         this.handleSignal(msg).catch((error): void => this.ctx.notify(String(error), true));
     }
     private async handleSignal(msg: Signal): Promise<void> {
         if (msg.type === 'offer' && !this.relay) await this.handleOffer(msg.sdp || '');
-        else if (msg.type === 'ice' && msg.candidate && !this.relay) {
+        else if (msg.type === 'ice' && msg.candidate && !this.relay && this.pc) {
             if (this.pc.remoteDescription) await this.pc.addIceCandidate(msg.candidate);
             else if (this.candidates.length < 100) this.candidates.push(msg.candidate);
         } else if (msg.type === 'relay-open') {
+            if (this.ctx.transportMode === 'rtc') {
+                this.ctx.notify('The host cannot establish WebRTC. Choose Automatic or Relay and rejoin.', true);
+                this.ctx.send({type: 'leave'});
+                return;
+            }
             this.relay = true;
-            this.pc.close();
+            this.pc?.close();
             clearTimeout(this.timer);
             this.uniqueId = this.ctx.id;
             this.dc = {
@@ -247,6 +269,7 @@ export class Peer {
         if (msg.type === 'data' && this.worker.onmessage) this.worker.onmessage(new MessageEvent('message', {data: JSON.stringify(msg)}));
     }
     public async handleOffer(sdp: string): Promise<void> {
+        if (!this.pc) throw new Error('WebRTC is unavailable. Choose Automatic or Relay.');
         await this.pc.setRemoteDescription({type: 'offer', sdp});
         for (const candidate of this.candidates.splice(0)) await this.pc.addIceCandidate(candidate);
         await this.pc.setLocalDescription(await this.pc.createAnswer());
@@ -256,6 +279,6 @@ export class Peer {
         clearTimeout(this.timer);
         this.relay = true;
         this.dc?.close();
-        this.pc.close();
+        this.pc?.close();
     }
 }

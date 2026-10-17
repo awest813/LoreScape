@@ -14,8 +14,8 @@ const {crc32} = require('node:zlib');
     const types = {'.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.wasm': 'application/wasm', '.svg': 'image/svg+xml'};
     const server = createServer((request, response) => {
         const url = new URL(request.url, 'http://localhost');
-        if (!url.pathname.startsWith('/LoreScape/')) return response.writeHead(404).end();
-        const file = path.resolve(root, url.pathname.slice('/LoreScape/'.length) || 'index.html');
+        const relative = url.pathname.startsWith('/LoreScape/') ? url.pathname.slice('/LoreScape/'.length) : url.pathname.slice(1);
+        const file = path.resolve(root, relative || 'index.html');
         if (!file.startsWith(root + path.sep)) return response.writeHead(403).end();
         try { response.writeHead(200, {'Content-Type': types[path.extname(file)] || 'application/octet-stream'}).end(readFileSync(file)); }
         catch { response.writeHead(404).end(); }
@@ -113,6 +113,33 @@ const {crc32} = require('node:zlib');
         await page.locator('.launcher-skip').focus();
         await page.keyboard.press('Enter');
         assert.equal(await page.locator('#canvas').evaluate(element => element === document.activeElement), true);
+        let roomBundle = false, workerAvailable = false;
+        await page.route('**/browser-world.json', route => route.fulfill({status: roomBundle ? 200 : 404, json: roomBundle ? {version: 1, kind: 'lorescape-coop'} : {}}));
+        await page.route('**/worker.js', route => route.fulfill({status: workerAvailable ? 200 : 404, contentType: 'application/javascript', body: '// fixture worker'}));
+        await page.route('**/data/pack/client/crc', route => route.fulfill({body: crc}));
+        await page.route('**/coop.html', route => route.fulfill({contentType: 'text/html', body: '<!doctype html><h1>Room lobby</h1>'}));
+        await page.goto(origin + '/LoreScape/?world=999');
+        await page.getByRole('button', {name: 'Check world again'}).waitFor();
+        assert.match(await page.locator('#lore-status-message').textContent(), /worker.js/);
+        assert.equal(await page.locator('#client-stage').isVisible(), false);
+        await page.addInitScript(() => Object.defineProperty(window, 'RTCPeerConnection', {configurable: true, value: undefined}));
+        await page.goto(origin + '/LoreScape/?world=998');
+        await page.getByRole('button', {name: 'Check world again'}).waitFor();
+        assert.match(await page.locator('#lore-status-message').textContent(), /WebRTC/);
+        roomBundle = true;
+        await page.goto(origin + '/LoreScape/?world=999');
+        await page.getByRole('button', {name: 'Check world again'}).waitFor();
+        assert.match(await page.locator('#lore-status-message').textContent(), /website root/);
+        await page.goto(origin + '/?world=999');
+        await page.getByRole('button', {name: 'Check world again'}).waitFor();
+        assert.match(await page.locator('#lore-status-message').textContent(), /worker.js/);
+        workerAvailable = true;
+        for (const [world, target] of [[999, 'host'], [998, 'join']]) {
+            await page.goto(origin + '/?world=' + world);
+            await page.waitForURL('**/coop.html#' + target);
+            assert.equal(await page.locator('h1').textContent(), 'Room lobby');
+        }
+        console.log('PASS: missing browser bundles recover clearly; installed room bundles route hosting/joining to their lobby even without WebRTC');
         assert.deepEqual(errors, []);
         console.log('PASS: Play targets the visible client and Skip to game focuses its canvas; no uncaught browser errors');
     } finally {

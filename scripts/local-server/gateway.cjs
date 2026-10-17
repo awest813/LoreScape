@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const {createPublicKey} = require('node:crypto');
 
+/** @param {{client: string, server: string, backendPort?: number, publicOrigin?: string}} options */
 function createGateway({client, server, backendPort = 8888, publicOrigin}) {
     const toolPages = new Set(['/playground.html', '/items.html', '/sounds.html', '/interface-editor.html', '/mapview.html', '/mesanim.html']);
     const toolData = new Map([
@@ -15,30 +16,39 @@ function createGateway({client, server, backendPort = 8888, publicOrigin}) {
     const key = createPublicKey(fs.readFileSync(path.join(server, 'data/config/public.pem'))).export({format: 'jwk'});
     const decimal = value => BigInt('0x' + Buffer.from(value, 'base64url').toString('hex')).toString();
     const configuration = JSON.stringify({version: 1, revision: 225, modulus: decimal(key.n), exponent: decimal(key.e)});
+    function launcherOrigin(req) {
+        if (publicOrigin) return publicOrigin;
+        try {
+            const requested = new URL(`http://${req.headers.host}`);
+            const listening = gateway.address();
+            if (['localhost', '127.0.0.1', '[::1]'].includes(requested.hostname) && !requested.username && !requested.password && requested.pathname === '/' && !requested.search && !requested.hash && Number(requested.port || 80) === listening?.port) return requested.origin;
+        } catch { /* Fall back to the printed loopback address. */ }
+        return 'http://127.0.0.1:8080';
+    }
     const types = {'.html': 'text/html; charset=utf-8', '.js': 'application/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json', '.wasm': 'application/wasm', '.ico': 'image/x-icon', '.png': 'image/png'};
     const gateway = http.createServer((req, res) => {
         let pathname, url;
         try { url = new URL(req.url, 'http://localhost'); pathname = decodeURIComponent(url.pathname); }
         catch { res.writeHead(400).end(); return; }
+        const origin = launcherOrigin(req);
         if (pathname === '/lorescape-local-server.zip') {
             res.writeHead(302, {Location: 'https://awest813.github.io/LoreScape/lorescape-local-server.zip'}).end();
             return;
         }
         if (pathname === '/') {
-            const origin = publicOrigin || 'http://127.0.0.1:8080';
             res.writeHead(302, {Location: `/index.html?world=0&setup=1&local=${encodeURIComponent(origin)}`}).end();
             return;
         }
         if (pathname === '/index.html' && !url.searchParams.has('setup') && !url.searchParams.has('local')) {
             url.searchParams.set('setup', '1');
-            url.searchParams.set('local', publicOrigin || 'http://127.0.0.1:8080');
+            url.searchParams.set('local', origin);
             res.writeHead(302, {Location: url.pathname + url.search}).end();
             return;
         }
         if (toolPages.has(pathname) && !url.searchParams.has('world')) {
             url.searchParams.set('world', '0');
             url.searchParams.set('setup', '1');
-            url.searchParams.set('local', publicOrigin || 'http://127.0.0.1:8080');
+            url.searchParams.set('local', origin);
             res.writeHead(302, {Location: url.pathname + url.search}).end();
             return;
         }

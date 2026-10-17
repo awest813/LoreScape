@@ -153,6 +153,7 @@ async function start(message, role, data) {
             else this.signals.push(signal);
         },
         notify(text, error = false) {
+            this.connectionError = error ? text : null;
             notice(text, error);
         },
         attachWorker(worker) {
@@ -301,7 +302,7 @@ async function receive(message) {
         return;
     }
     if (message.type === 'ended' || message.type === 'left') {
-        if (session) endLocal(message.reason || 'You left the room.');
+        if (session) endLocal(message.reason || session.connectionError || 'You left the room.');
         return;
     }
     if (!session) return;

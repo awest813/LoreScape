@@ -4,7 +4,7 @@ import {downloadText} from './jagex2/util/JsUtil';
 import {defaultPreferences, LauncherPreferences, parsePreferences, parseWorldChoices, validWorld} from './launcher-state';
 import type {WorldInfo} from './worldlist';
 import {DEFAULT_LOCAL_ADDRESS, localWorldAddresses, WORLD_LIST_URL} from './connection';
-import {checkWorkerBundle, isLocalWorld, loadClientChecksums, worldLabel} from './local-worlds';
+import {checkWorkerBundle, isLocalWorld, loadClientChecksums, usesRoomLobby, worldLabel} from './local-worlds';
 
 const storageKey: string = 'lorescape.launcher.v1';
 const form: HTMLFormElement = document.getElementById('launcher-form') as HTMLFormElement;
@@ -63,8 +63,8 @@ function updateLocalControls(): void {
     help.hidden = id !== 998 && id !== 999;
     help.textContent =
         id === 999
-            ? 'Requires worker.js, its server dependencies, and data/pack/client/ beside this page. A normal build does not include them. Select New user on the login screen to exchange a peer invitation, or type ::peer while logged in.'
-            : 'Requires matching data/pack/client/ on this website and a running browser host. Select New user on the login screen to paste the host invitation before logging in.';
+            ? 'Requires worker.js, its server dependencies, and data/pack/client/ beside this page. A normal build does not include them. Installed LoreScape room bundles open the saved-world lobby. External bundles use New user to exchange invitations, or ::peer while logged in.'
+            : 'Requires matching data/pack/client/ on this website and a running browser host. Installed LoreScape room bundles open the room-code lobby. For an external clipboard bundle, select New user to paste the host invitation before logging in.';
     for (const button of document.querySelectorAll<HTMLButtonElement>('.local-world-option')) button.setAttribute('aria-pressed', String(Number(button.dataset.world) === id));
     if (isLocalWorld(id)) (document.getElementById('local-worlds') as HTMLDetailsElement).open = true;
     document.querySelector<HTMLElement>('.launch-account')!.hidden = isLocalWorld(id);
@@ -188,6 +188,15 @@ async function launch(): Promise<void> {
         try {
             const files: string = id === 0 ? localWorldAddresses(selectedAddress, window.location.protocol === 'https:').files : 'data/pack/client';
             window.history.replaceState(null, '', url);
+            if (id >= 998 && (await usesRoomLobby(check.signal))) {
+                const lobby: URL = new URL('coop.html', window.location.href);
+                if (lobby.pathname !== '/coop.html') throw new Error('This browser world bundle requires hosting at the website root. Open its root-level coop.html launcher, or use the local server setup instead.');
+                if (id === 999) await checkWorkerBundle(check.signal);
+                await loadClientChecksums(files, id, check.signal);
+                lobby.hash = id === 999 ? 'host' : 'join';
+                if (!check.signal.aborted) window.location.assign(lobby.href);
+                return;
+            }
             if (id >= 998 && typeof RTCPeerConnection === 'undefined') throw new Error('Browser worlds require WebRTC support. Use a current browser or choose Local server.');
             if (id === 999) await checkWorkerBundle(check.signal);
             await loadClientChecksums(files, id, check.signal);
@@ -196,7 +205,9 @@ async function launch(): Promise<void> {
             if (check.signal.aborted) return;
             setPageStatus(`Unable to load the client. ${error instanceof Error ? error.message : 'Check the local world files and try again.'}`, true, {
                 label: 'Check world again',
-                action: (): void => { void launch(); }
+                action: (): void => {
+                    void launch();
+                }
             });
             launchButton.disabled = false;
             if (document.activeElement === document.body) document.getElementById('lore-retry')!.focus({preventScroll: true});

@@ -1,4 +1,4 @@
-import {downloadUrl} from './jagex2/util/JsUtil';
+import {downloadText, downloadUrl} from './jagex2/util/JsUtil';
 
 export function isLocalWorld(world: number): boolean {
     return world === 0 || world === 998 || world === 999;
@@ -6,6 +6,16 @@ export function isLocalWorld(world: number): boolean {
 
 export function worldLabel(world: number): string {
     return world === 0 ? 'Local server' : world === 998 ? 'Join a host' : world === 999 ? 'Host in browser' : `World ${world}`;
+}
+
+export async function usesRoomLobby(signal: AbortSignal): Promise<boolean> {
+    try {
+        const bundle: unknown = JSON.parse(await downloadText('browser-world.json', 3000, signal));
+        return !!bundle && typeof bundle === 'object' && (bundle as {version?: unknown}).version === 1 && (bundle as {kind?: unknown}).kind === 'lorescape-coop';
+    } catch (error) {
+        if (signal.aborted) throw error;
+        return false;
+    }
 }
 
 export async function loadClientChecksums(address: string, world: number, signal?: AbortSignal): Promise<Int8Array> {
